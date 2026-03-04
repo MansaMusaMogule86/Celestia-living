@@ -8,9 +8,9 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     return handleApiRoute(async () => {
-        await requireAuth();
+        const session = await requireAuth();
         const { id } = await params;
-        const deal = await dealsService.getById(id);
+        const deal = await dealsService.getById(id, session.teamId);
         if (!deal) {
             return errorResponse("Deal not found", 404);
         }

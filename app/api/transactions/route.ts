@@ -6,18 +6,20 @@ import { requireAuth } from "@/lib/auth/session";
 
 export async function GET() {
     return handleApiRoute(async () => {
-        await requireAuth();
-        const transactions = await transactionsService.getAll();
+        const session = await requireAuth();
+        const transactions = await transactionsService.getAll(session.teamId);
         return successResponse(transactions);
     });
 }
 
 export async function POST(request: NextRequest) {
     return handleApiRoute(async () => {
-        await requireAuth();
+        const session = await requireAuth();
         const body = await request.json();
         const payload = createTransactionSchema.parse(body);
-        const transaction = await transactionsService.create(payload);
+        const transaction = await transactionsService.create(payload, {
+            teamId: session.teamId,
+        });
         return successResponse(transaction, 201);
     });
 }
