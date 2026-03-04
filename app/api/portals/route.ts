@@ -21,9 +21,9 @@ const legacyToPrismaPortal: Record<LegacyPortalName, string> = {
 
 export async function GET() {
     return handleApiRoute(async () => {
-        await requireAuth();
+        const session = await requireAuth();
 
-        const integrations = await portalsService.getIntegrations();
+        const integrations = await portalsService.getIntegrations(session.teamId);
         const mapped = integrations.map((item) => ({
             ...item,
             portal: legacyToPrismaPortal[item.portal],

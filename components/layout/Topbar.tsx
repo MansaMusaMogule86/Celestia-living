@@ -3,6 +3,7 @@
 import { Bell, Search, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -13,6 +14,13 @@ import {
 
 export default function Topbar() {
     const { setTheme, theme } = useTheme();
+    const router = useRouter();
+
+    const handleLogout = async () => {
+        await fetch("/api/auth/logout", { method: "POST" });
+        router.push("/auth/login");
+        router.refresh();
+    };
 
     return (
         <header className="h-14 border-b bg-card px-6 flex items-center justify-between sticky top-0 z-10">
@@ -70,7 +78,7 @@ export default function Topbar() {
                         <DropdownMenuItem>Profile</DropdownMenuItem>
                         <DropdownMenuItem>Settings</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
                             Sign out
                         </DropdownMenuItem>
                     </DropdownMenuContent>

@@ -22,8 +22,8 @@ export const redis = globalForRedis.redis ?? createRedisConnection();
 if (process.env.NODE_ENV !== "production") globalForRedis.redis = redis;
 
 // Prevent unhandled error events from crashing the process or spamming the console
-redis.on("error", (err) => {
-    // console.error("[Redis] Connection error:", err.message);
+redis.on("error", () => {
+    // Silently handle Redis connection errors in dev
 });
 
 // ─── Queue Names ─────────────────────────────────────────────────────
@@ -40,7 +40,9 @@ export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
 // ─── Queue Instances ─────────────────────────────────────────────────
 
 const defaultQueueOptions = {
-    connection: redis as unknown as import("bullmq").ConnectionOptions,
+    connection: {
+        url: redisUrl,
+    },
     defaultJobOptions: {
         attempts: 3,
         backoff: {
@@ -74,15 +76,19 @@ export const metricsFetchQueue = new Queue(
 
 // Prevent unhandled error events from BullMQ crashing or spamming the console
 [campaignPublishQueue, campaignSyncQueue, automationExecuteQueue, metricsFetchQueue].forEach(q => {
-    q.on("error", (err) => {
-        // console.error(`[Queue Error]`, err.message);
+    q.on("error", () => {
+        // Silently handle queue errors in dev
     });
 });
 
 // ─── Queue Events (for real-time UI updates) ─────────────────────────
 
 export function createQueueEvents(name: QueueName): QueueEvents {
-    return new QueueEvents(name, { connection: createRedisConnection() as unknown as import("bullmq").ConnectionOptions });
+    return new QueueEvents(name, {
+        connection: {
+            url: redisUrl,
+        },
+    });
 }
 
 // ─── Job Types ───────────────────────────────────────────────────────

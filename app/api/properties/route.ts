@@ -1,17 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { propertiesService } from "@/server/services/propertiesService";
+import { handleApiRoute, successResponse } from "@/lib/api/utils";
+import { requireAuth } from "@/lib/auth/session";
+import { createPropertySchema } from "@/lib/validators";
 
 export async function GET() {
-    const properties = await propertiesService.getAll();
-    return NextResponse.json(properties);
+    return handleApiRoute(async () => {
+        const session = await requireAuth();
+        const properties = await propertiesService.getAll(session.teamId);
+        return successResponse(properties);
+    });
 }
 
 export async function POST(request: NextRequest) {
-    try {
+    return handleApiRoute(async () => {
+        const session = await requireAuth();
         const body = await request.json();
-        const property = await propertiesService.create(body);
-        return NextResponse.json(property, { status: 201 });
-    } catch {
-        return NextResponse.json({ error: "Failed to create property" }, { status: 400 });
-    }
+        const payload = createPropertySchema.parse(body);
+        const property = await propertiesService.create(payload, session.userId, session.teamId);
+        return successResponse(property, 201);
+    });
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -22,7 +23,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const navItems = [
+const navItems: Array<{ title: string; href: Route; icon: typeof LayoutDashboard }> = [
     { title: "Command Center", href: "/dashboard/command-center", icon: BrainCircuit },
     { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { title: "Properties", href: "/dashboard/properties", icon: Building2 },

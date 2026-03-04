@@ -20,6 +20,7 @@ import { ArrowLeft, Loader2, ReceiptText } from "lucide-react";
 export default function NewTransactionPage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         type: "sale",
         status: "pending",
@@ -33,15 +34,54 @@ export default function NewTransactionPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSubmitError(null);
         setIsSubmitting(true);
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const amount = Number(formData.amount || 0);
+        if (Number.isNaN(amount)) {
+            setSubmitError("Amount must be a valid number");
+            setIsSubmitting(false);
+            return;
+        }
 
-        // In real app, would call transactionsService.create()
-        console.log("Creating transaction:", formData);
+        try {
+            const payload = {
+                type: formData.type,
+                status: formData.status,
+                amount,
+                currency: "AED",
+                deal: {
+                    id: `deal-${formData.dealTitle.trim().toLowerCase().replace(/\s+/g, "-")}`,
+                    title: formData.dealTitle.trim(),
+                },
+                client: {
+                    id: `client-${formData.clientName.trim().toLowerCase().replace(/\s+/g, "-")}`,
+                    name: formData.clientName.trim(),
+                },
+                description: formData.description,
+                paymentMethod: formData.paymentMethod,
+                reference: formData.reference || generateReference(),
+            };
 
-        router.push("/dashboard/transactions");
+            const res = await fetch("/api/transactions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                setSubmitError(json?.error || "Failed to create transaction");
+                return;
+            }
+
+            router.push("/dashboard/transactions");
+            router.refresh();
+        } catch {
+            setSubmitError("Failed to create transaction");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const updateField = (field: string, value: string) => {
@@ -238,6 +278,7 @@ export default function NewTransactionPage() {
                                 <CardTitle>Actions</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
+                                {submitError && <p className="text-sm text-red-600">{submitError}</p>}
                                 <Button
                                     type="submit"
                                     className="w-full gap-2"

@@ -65,9 +65,11 @@ export default async function ReportsPage() {
                         This Month
                         <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     </Button>
-                    <Button className="gap-2 shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground">
-                        <Download className="h-4 w-4" />
-                        Export Report
+                    <Button asChild className="gap-2 shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground">
+                        <a href="/api/reports/export">
+                            <Download className="h-4 w-4" />
+                            Export Report
+                        </a>
                     </Button>
                 </div>
             </div>

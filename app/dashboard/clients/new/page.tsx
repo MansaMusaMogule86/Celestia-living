@@ -57,6 +57,7 @@ const documentTypes = [
 export default function NewClientPage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
     const [selectedTypes, setSelectedTypes] = useState<ClientType[]>([]);
 
     const [formData, setFormData] = useState({
@@ -86,17 +87,39 @@ export default function NewClientPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSubmitError(null);
         setIsSubmitting(true);
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+            const res = await fetch("/api/clients", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: formData.name.trim(),
+                    email: formData.email.trim().toLowerCase(),
+                    phone: formData.phone.trim(),
+                    nationality: formData.nationality,
+                    notes: formData.notes,
+                    type: selectedTypes,
+                    documents: [],
+                    properties: [],
+                    deals: [],
+                }),
+            });
 
-        console.log("Creating client:", {
-            ...formData,
-            type: selectedTypes,
-        });
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                setSubmitError(json?.error || "Failed to create client");
+                return;
+            }
 
-        router.push("/dashboard/clients");
+            router.push("/dashboard/clients");
+            router.refresh();
+        } catch {
+            setSubmitError("Failed to create client");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -251,6 +274,7 @@ export default function NewClientPage() {
 
                 {/* Submit Button */}
                 <div className="lg:col-span-2 flex justify-end gap-4">
+                    {submitError && <p className="text-sm text-red-600 mr-auto self-center">{submitError}</p>}
                     <Link href="/dashboard/clients">
                         <Button type="button" variant="outline">
                             Cancel

@@ -20,6 +20,170 @@ export const portalNameSchema = z.enum([
 
 export type PortalNameEnum = z.infer<typeof portalNameSchema>;
 
+// ─── Auth Schemas ───────────────────────────────────────────────────
+
+export const loginSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6).max(200),
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;
+
+export const createLeadSchema = z.object({
+    name: z.string().min(1).max(120),
+    email: z.string().email(),
+    phone: z.string().min(5).max(30),
+    status: z.enum(["new", "contacted", "qualified", "negotiating", "converted", "lost"]).default("new"),
+    source: z.enum(["website", "bayut", "property_finder", "dubizzle", "referral", "walk_in", "social_media", "other"]),
+    priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+    budget: z.object({
+        min: z.number().nonnegative(),
+        max: z.number().nonnegative(),
+    }),
+    requirements: z.object({
+        type: z.array(z.enum(["apartment", "villa", "townhouse", "penthouse", "studio", "office", "retail"])),
+        bedrooms: z.array(z.number().int().nonnegative()),
+        areas: z.array(z.string()),
+        listingType: z.enum(["sale", "rent"]),
+    }),
+    notes: z.string().max(5000).default(""),
+    assignedTo: z.object({
+        id: z.string(),
+        name: z.string(),
+    }).optional(),
+});
+
+export type CreateLeadInput = z.infer<typeof createLeadSchema>;
+
+export const createClientSchema = z.object({
+    name: z.string().min(1).max(120),
+    email: z.string().email(),
+    phone: z.string().min(5).max(30),
+    type: z.array(z.enum(["buyer", "seller", "tenant", "landlord"]))
+        .min(1)
+        .max(4),
+    nationality: z.string().default(""),
+    documents: z.array(z.object({
+        id: z.string(),
+        type: z.string(),
+        name: z.string(),
+        url: z.string(),
+    })).default([]),
+    properties: z.array(z.string()).default([]),
+    deals: z.array(z.string()).default([]),
+    notes: z.string().max(5000).default(""),
+});
+
+export type CreateClientInput = z.infer<typeof createClientSchema>;
+
+export const createDealSchema = z.object({
+    title: z.string().min(1).max(200),
+    type: z.enum(["sale", "rental"]),
+    stage: z.enum(["inquiry", "viewing", "offer", "negotiation", "agreement", "closed", "cancelled"]),
+    property: z.object({
+        id: z.string(),
+        title: z.string(),
+    }),
+    client: z.object({
+        id: z.string(),
+        name: z.string(),
+    }),
+    value: z.number().nonnegative(),
+    commission: z.number().nonnegative(),
+    agent: z.object({
+        id: z.string(),
+        name: z.string(),
+    }),
+    expectedCloseDate: z.string(),
+    actualCloseDate: z.string().optional(),
+    notes: z.string().max(5000).default(""),
+});
+
+export type CreateDealInput = z.infer<typeof createDealSchema>;
+
+export const createTransactionSchema = z.object({
+    type: z.enum(["sale", "rental_payment", "commission", "deposit", "refund"]),
+    status: z.enum(["pending", "completed", "failed", "cancelled"]),
+    amount: z.number().nonnegative(),
+    currency: z.string().default("AED"),
+    deal: z.object({
+        id: z.string(),
+        title: z.string(),
+    }),
+    client: z.object({
+        id: z.string(),
+        name: z.string(),
+    }),
+    description: z.string().max(5000).default(""),
+    paymentMethod: z.string().max(120),
+    reference: z.string().max(120),
+    completedAt: z.string().optional(),
+});
+
+export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
+
+export const createPropertySchema = z.object({
+    title: z.string().min(1).max(200),
+    type: z.enum(["apartment", "villa", "townhouse", "penthouse", "studio", "office", "retail"]),
+    status: z.enum(["available", "under_offer", "sold", "rented", "off_market"]),
+    listingType: z.enum(["sale", "rent"]),
+    price: z.number().nonnegative(),
+    location: z.object({
+        area: z.string().min(1),
+        community: z.string().min(1),
+        building: z.string().optional(),
+        developer: z.string().optional(),
+        address: z.string().min(1),
+    }),
+    details: z.object({
+        bedrooms: z.number().int().nonnegative(),
+        bathrooms: z.number().int().nonnegative(),
+        size: z.number().nonnegative(),
+        parkingSpaces: z.number().int().nonnegative(),
+        furnished: z.boolean(),
+    }),
+    amenities: z.array(z.string()).default([]),
+    images: z.array(z.string()).default([]),
+    description: z.string().max(10000).default(""),
+    agent: z.object({
+        id: z.string(),
+        name: z.string(),
+    }),
+});
+
+export type CreatePropertyInput = z.infer<typeof createPropertySchema>;
+
+export const crmSettingsSchema = z.object({
+    companyName: z.string().min(1).max(200),
+    email: z.string().email(),
+    phone: z.string().min(5).max(30),
+    address: z.string().min(1).max(300),
+    currency: z.string().min(2).max(10),
+    emailNotifications: z.boolean(),
+    smsNotifications: z.boolean(),
+    autoSync: z.boolean(),
+    darkMode: z.boolean(),
+});
+
+export const updateCrmSettingsSchema = crmSettingsSchema.partial();
+
+export type CrmSettingsInput = z.infer<typeof crmSettingsSchema>;
+export type UpdateCrmSettingsInput = z.infer<typeof updateCrmSettingsSchema>;
+
+export const createAppointmentSchema = z.object({
+    title: z.string().min(1).max(200),
+    type: z.enum(["viewing", "meeting", "follow_up", "call", "other"]),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    startTime: z.string().regex(/^\d{2}:\d{2}$/),
+    endTime: z.string().regex(/^\d{2}:\d{2}$/),
+    client: z.string().max(120).optional(),
+    property: z.string().max(200).optional(),
+    location: z.string().max(200).optional(),
+    notes: z.string().max(5000).optional(),
+});
+
+export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
+
 // ─── Campaign Schemas ────────────────────────────────────────────────
 
 export const campaignStatusSchema = z.enum([
@@ -111,14 +275,14 @@ export const automationActionTypeSchema = z.enum([
 
 export const automationActionSchema = z.object({
     type: automationActionTypeSchema,
-    config: z.record(z.union([z.string(), z.number(), z.boolean()])),
+    config: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
     order: z.number().int().min(0),
 });
 
 export const createAutomationRuleSchema = z.object({
     name: z.string().min(1).max(200),
     trigger: automationTriggerSchema,
-    triggerConfig: z.record(z.string()).default({}),
+    triggerConfig: z.record(z.string(), z.string()).default({}),
     actions: z.array(automationActionSchema).min(1, "Add at least one action"),
     portals: z.array(portalNameSchema).default([]),
     enabled: z.boolean().default(true),

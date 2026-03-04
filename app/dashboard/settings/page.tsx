@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,11 +32,56 @@ export default function SettingsPage() {
     });
 
     const [saved, setSaved] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleSave = () => {
-        // Simulate save
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+    useEffect(() => {
+        const loadSettings = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const response = await fetch("/api/settings", { cache: "no-store" });
+                const result = await response.json();
+
+                if (!response.ok || !result?.success) {
+                    throw new Error(result?.error || "Failed to load settings");
+                }
+
+                setSettings(result.data);
+            } catch (loadError: any) {
+                setError(loadError.message || "Failed to load settings");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadSettings();
+    }, []);
+
+    const handleSave = async () => {
+        try {
+            setSaving(true);
+            setError(null);
+            const response = await fetch("/api/settings", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(settings),
+            });
+            const result = await response.json();
+
+            if (!response.ok || !result?.success) {
+                throw new Error(result?.error || "Failed to save settings");
+            }
+
+            setSettings(result.data);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2000);
+        } catch (saveError: any) {
+            setError(saveError.message || "Failed to save settings");
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
@@ -52,7 +97,7 @@ export default function SettingsPage() {
                         Manage your CRM preferences
                     </p>
                 </div>
-                <Button onClick={handleSave} className="gap-2">
+                <Button onClick={handleSave} className="gap-2" disabled={loading || saving}>
                     {saved ? (
                         <>
                             <CheckCircle className="h-4 w-4" />
@@ -61,11 +106,26 @@ export default function SettingsPage() {
                     ) : (
                         <>
                             <Save className="h-4 w-4" />
-                            Save Changes
+                            {saving ? "Saving..." : "Save Changes"}
                         </>
                     )}
                 </Button>
             </div>
+
+            {error && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                    {error}
+                </div>
+            )}
+
+            {loading ? (
+                <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                        Loading settings...
+                    </CardContent>
+                </Card>
+            ) : (
+                <>
 
             <div className="grid gap-6 lg:grid-cols-2">
                 {/* Company Information */}
@@ -292,6 +352,8 @@ export default function SettingsPage() {
                     </div>
                 </CardContent>
             </Card>
+                </>
+            )}
         </div>
     );
 }

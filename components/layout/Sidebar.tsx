@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -19,7 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const sidebarItems = [
+const sidebarItems: Array<{ title: string; href: Route; icon: typeof LayoutDashboard }> = [
     {
         title: "Command Center",
         href: "/dashboard/command-center",

@@ -1,4 +1,5 @@
 import { PortalImport, PortalName, PortalSyncStatus } from "@/lib/types";
+import { prisma } from "@/server/db/prisma";
 
 // Initial portal integrations - ready to configure
 const mockPortals: PortalImport[] = [
@@ -201,8 +202,105 @@ export interface PortalIntegration {
 }
 
 const mockSyncLogs: SyncLog[] = [];
+let prismaEnabled = true;
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+function toPrismaPortal(portal: PortalName): "INSTAGRAM" | "FACEBOOK" | "TIKTOK" | "YOUTUBE" | "LINKEDIN" | "X_TWITTER" | "SNAPCHAT" | "WHATSAPP" | "TELEGRAM" | "PINTEREST" | "DUBIZZLE" | "PROPERTY_FINDER" | "BAYUT" {
+    switch (portal) {
+        case "instagram": return "INSTAGRAM";
+        case "facebook": return "FACEBOOK";
+        case "tiktok": return "TIKTOK";
+        case "youtube": return "YOUTUBE";
+        case "linkedin": return "LINKEDIN";
+        case "x_twitter": return "X_TWITTER";
+        case "snapchat": return "SNAPCHAT";
+        case "whatsapp": return "WHATSAPP";
+        case "telegram": return "TELEGRAM";
+        case "pinterest": return "PINTEREST";
+        case "dubizzle": return "DUBIZZLE";
+        case "property_finder": return "PROPERTY_FINDER";
+        case "bayut": return "BAYUT";
+        default: return "INSTAGRAM";
+    }
+}
+
+function fromPrismaPortal(portal: string): PortalName {
+    switch (portal) {
+        case "INSTAGRAM": return "instagram";
+        case "FACEBOOK": return "facebook";
+        case "TIKTOK": return "tiktok";
+        case "YOUTUBE": return "youtube";
+        case "LINKEDIN": return "linkedin";
+        case "X_TWITTER": return "x_twitter";
+        case "SNAPCHAT": return "snapchat";
+        case "WHATSAPP": return "whatsapp";
+        case "TELEGRAM": return "telegram";
+        case "PINTEREST": return "pinterest";
+        case "DUBIZZLE": return "dubizzle";
+        case "PROPERTY_FINDER": return "property_finder";
+        case "BAYUT": return "bayut";
+        default: return "instagram";
+    }
+}
+
+async function resolveTeamId(teamId?: string): Promise<string | null> {
+    try {
+        if (teamId) {
+            const existing = await prisma.team.findUnique({ where: { id: teamId } });
+            if (existing) return existing.id;
+        }
+
+        const defaultTeam = await prisma.team.upsert({
+            where: { slug: "default-team" },
+            update: {},
+            create: {
+                name: "Default Team",
+                slug: "default-team",
+            },
+        });
+
+        return defaultTeam.id;
+    } catch {
+        return null;
+    }
+}
+
+function mergeIntegrationWithState(
+    portal: PortalName,
+    persisted?: {
+        status: string;
+        autoPublish: boolean;
+        accountName: string | null;
+        autoRepostDays: number;
+        leadAssignment: string;
+    }
+): PortalIntegration {
+    const existing = integrationState.get(portal) || {
+        status: "DISCONNECTED",
+        enabled: false,
+        autoPublish: false,
+        importLeads: true,
+        syncInterval: 6,
+        accountName: "",
+        lastSyncAt: null,
+        propertiesSynced: 0,
+        leadsImported: 0,
+    };
+
+    return {
+        portal,
+        status: persisted?.status === "CONNECTED" ? "CONNECTED" : "DISCONNECTED",
+        enabled: persisted?.status === "CONNECTED" || existing.enabled,
+        autoPublish: persisted?.autoPublish ?? existing.autoPublish,
+        importLeads: persisted ? persisted.leadAssignment !== "MANUAL" : existing.importLeads,
+        syncInterval: persisted?.autoRepostDays || existing.syncInterval,
+        accountName: persisted?.accountName || existing.accountName,
+        lastSyncAt: existing.lastSyncAt,
+        propertiesSynced: existing.propertiesSynced,
+        leadsImported: existing.leadsImported,
+    };
+}
 
 // Categorization helpers
 const PROPERTY_PORTALS: PortalName[] = ["dubizzle", "property_finder", "bayut"];
@@ -254,24 +352,58 @@ export const portalsService = {
         return mockPortals.find(p => p.portal === portal) || null;
     },
 
-    async getIntegrations(): Promise<PortalIntegration[]> {
-        await delay(100);
-        return [...integrationState.entries()].map(([portal, config]) => ({
-            portal,
-            ...config,
-        }));
+    async getIntegrations(teamId?: string): Promise<PortalIntegration[]> {
+        if (!prismaEnabled || !teamId) {
+            await delay(100);
+            return [...integrationState.entries()].map(([portal, config]) => ({
+                portal,
+                ...config,
+            }));
+        }
+
+        try {
+            const rows = await prisma.portalConnection.findMany({
+                where: { teamId },
+            });
+
+            const persistedMap = new Map<PortalName, (typeof rows)[number]>(
+                rows.map((row) => [fromPrismaPortal(row.portal), row])
+            );
+
+            return [...integrationState.keys()].map((portal) => {
+                const merged = mergeIntegrationWithState(portal, persistedMap.get(portal));
+                integrationState.set(portal, {
+                    status: merged.status,
+                    enabled: merged.enabled,
+                    autoPublish: merged.autoPublish,
+                    importLeads: merged.importLeads,
+                    syncInterval: merged.syncInterval,
+                    accountName: merged.accountName,
+                    lastSyncAt: merged.lastSyncAt,
+                    propertiesSynced: merged.propertiesSynced,
+                    leadsImported: merged.leadsImported,
+                });
+                return merged;
+            });
+        } catch {
+            prismaEnabled = false;
+            await delay(100);
+            return [...integrationState.entries()].map(([portal, config]) => ({
+                portal,
+                ...config,
+            }));
+        }
     },
 
-    async getIntegration(portal: PortalName): Promise<PortalIntegration | null> {
-        await delay(50);
-        const config = integrationState.get(portal);
-        if (!config) return null;
-        return { portal, ...config };
+    async getIntegration(portal: PortalName, teamId?: string): Promise<PortalIntegration | null> {
+        const all = await this.getIntegrations(teamId);
+        return all.find((item) => item.portal === portal) || null;
     },
 
     async updateIntegration(
         portal: PortalName,
-        patch: Partial<Omit<PortalIntegration, "portal">>
+        patch: Partial<Omit<PortalIntegration, "portal">>,
+        teamId?: string
     ): Promise<PortalIntegration | null> {
         await delay(100);
         const existing = integrationState.get(portal);
@@ -283,6 +415,40 @@ export const portalsService = {
         };
 
         integrationState.set(portal, updated);
+
+        if (prismaEnabled && teamId) {
+            try {
+                const resolvedTeamId = await resolveTeamId(teamId);
+                if (resolvedTeamId) {
+                    await prisma.portalConnection.upsert({
+                        where: {
+                            teamId_portal: {
+                                teamId: resolvedTeamId,
+                                portal: toPrismaPortal(portal),
+                            },
+                        },
+                        update: {
+                            status: updated.status === "CONNECTED" ? "CONNECTED" : "DISCONNECTED",
+                            autoPublish: updated.autoPublish,
+                            autoRepostDays: updated.syncInterval,
+                            accountName: updated.accountName || null,
+                            leadAssignment: updated.importLeads ? "AUTO_ASSIGN" : "MANUAL",
+                        },
+                        create: {
+                            teamId: resolvedTeamId,
+                            portal: toPrismaPortal(portal),
+                            status: updated.status === "CONNECTED" ? "CONNECTED" : "DISCONNECTED",
+                            autoPublish: updated.autoPublish,
+                            autoRepostDays: updated.syncInterval,
+                            accountName: updated.accountName || null,
+                            leadAssignment: updated.importLeads ? "AUTO_ASSIGN" : "MANUAL",
+                        },
+                    });
+                }
+            } catch {
+                prismaEnabled = false;
+            }
+        }
 
         const portalImport = mockPortals.find((item) => item.portal === portal);
         if (portalImport) {
@@ -334,7 +500,7 @@ export const portalsService = {
         return portal;
     },
 
-    async triggerIntegrationSync(portal: PortalName): Promise<PortalIntegration | null> {
+    async triggerIntegrationSync(portal: PortalName, teamId?: string): Promise<PortalIntegration | null> {
         await delay(350);
         const portalImport = mockPortals.find((item) => item.portal === portal);
         if (!portalImport) return null;
@@ -353,7 +519,14 @@ export const portalsService = {
         };
 
         integrationState.set(portal, updated);
-        return { portal, ...updated };
+
+        const persisted = await this.updateIntegration(portal, {
+            lastSyncAt: updated.lastSyncAt,
+            propertiesSynced: updated.propertiesSynced,
+            leadsImported: updated.leadsImported,
+        }, teamId);
+
+        return persisted || { portal, ...updated };
     },
 
     async getSyncLogs(portalId?: string): Promise<SyncLog[]> {
