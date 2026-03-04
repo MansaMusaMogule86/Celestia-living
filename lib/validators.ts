@@ -20,6 +20,15 @@ export const portalNameSchema = z.enum([
 
 export type PortalNameEnum = z.infer<typeof portalNameSchema>;
 
+// ─── Auth Schemas ───────────────────────────────────────────────────
+
+export const loginSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6).max(200),
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;
+
 // ─── Campaign Schemas ────────────────────────────────────────────────
 
 export const campaignStatusSchema = z.enum([
