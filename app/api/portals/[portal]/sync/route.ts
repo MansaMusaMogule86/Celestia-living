@@ -25,13 +25,13 @@ export async function POST(
     { params }: { params: Promise<{ portal: string }> }
 ) {
     return handleApiRoute(async () => {
-        await requireAuth();
+        const session = await requireAuth();
 
         const { portal } = await params;
         const parsedPortal = portalNameSchema.parse(portal.toUpperCase());
         const legacyPortal = prismaToLegacyPortal[parsedPortal];
 
-        const synced = await portalsService.triggerIntegrationSync(legacyPortal);
+        const synced = await portalsService.triggerIntegrationSync(legacyPortal, session.teamId);
         if (!synced) {
             throw new Error("Not Found");
         }
