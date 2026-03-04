@@ -122,6 +122,37 @@ export const createTransactionSchema = z.object({
 
 export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
 
+export const createPropertySchema = z.object({
+    title: z.string().min(1).max(200),
+    type: z.enum(["apartment", "villa", "townhouse", "penthouse", "studio", "office", "retail"]),
+    status: z.enum(["available", "under_offer", "sold", "rented", "off_market"]),
+    listingType: z.enum(["sale", "rent"]),
+    price: z.number().nonnegative(),
+    location: z.object({
+        area: z.string().min(1),
+        community: z.string().min(1),
+        building: z.string().optional(),
+        developer: z.string().optional(),
+        address: z.string().min(1),
+    }),
+    details: z.object({
+        bedrooms: z.number().int().nonnegative(),
+        bathrooms: z.number().int().nonnegative(),
+        size: z.number().nonnegative(),
+        parkingSpaces: z.number().int().nonnegative(),
+        furnished: z.boolean(),
+    }),
+    amenities: z.array(z.string()).default([]),
+    images: z.array(z.string()).default([]),
+    description: z.string().max(10000).default(""),
+    agent: z.object({
+        id: z.string(),
+        name: z.string(),
+    }),
+});
+
+export type CreatePropertyInput = z.infer<typeof createPropertySchema>;
+
 // ─── Campaign Schemas ────────────────────────────────────────────────
 
 export const campaignStatusSchema = z.enum([
