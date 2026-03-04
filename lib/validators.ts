@@ -29,6 +29,32 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
+export const createLeadSchema = z.object({
+    name: z.string().min(1).max(120),
+    email: z.string().email(),
+    phone: z.string().min(5).max(30),
+    status: z.enum(["new", "contacted", "qualified", "negotiating", "converted", "lost"]).default("new"),
+    source: z.enum(["website", "bayut", "property_finder", "dubizzle", "referral", "walk_in", "social_media", "other"]),
+    priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+    budget: z.object({
+        min: z.number().nonnegative(),
+        max: z.number().nonnegative(),
+    }),
+    requirements: z.object({
+        type: z.array(z.enum(["apartment", "villa", "townhouse", "penthouse", "studio", "office", "retail"])),
+        bedrooms: z.array(z.number().int().nonnegative()),
+        areas: z.array(z.string()),
+        listingType: z.enum(["sale", "rent"]),
+    }),
+    notes: z.string().max(5000).default(""),
+    assignedTo: z.object({
+        id: z.string(),
+        name: z.string(),
+    }).optional(),
+});
+
+export type CreateLeadInput = z.infer<typeof createLeadSchema>;
+
 // ─── Campaign Schemas ────────────────────────────────────────────────
 
 export const campaignStatusSchema = z.enum([
