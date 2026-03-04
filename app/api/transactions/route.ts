@@ -1,14 +1,14 @@
 import { NextRequest } from "next/server";
-import { dealsService } from "@/server/services/dealsService";
+import { transactionsService } from "@/server/services/transactionsService";
 import { handleApiRoute, successResponse } from "@/lib/api/utils";
-import { createDealSchema } from "@/lib/validators";
+import { createTransactionSchema } from "@/lib/validators";
 import { requireAuth } from "@/lib/auth/session";
 
 export async function GET() {
     return handleApiRoute(async () => {
         await requireAuth();
-        const deals = await dealsService.getAll();
-        return successResponse(deals);
+        const transactions = await transactionsService.getAll();
+        return successResponse(transactions);
     });
 }
 
@@ -16,8 +16,8 @@ export async function POST(request: NextRequest) {
     return handleApiRoute(async () => {
         await requireAuth();
         const body = await request.json();
-        const payload = createDealSchema.parse(body);
-        const deal = await dealsService.create(payload);
-        return successResponse(deal, 201);
+        const payload = createTransactionSchema.parse(body);
+        const transaction = await transactionsService.create(payload);
+        return successResponse(transaction, 201);
     });
 }

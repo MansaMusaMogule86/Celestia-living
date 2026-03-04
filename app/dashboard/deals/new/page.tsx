@@ -20,6 +20,7 @@ import { ArrowLeft, Loader2, Briefcase } from "lucide-react";
 export default function NewDealPage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         title: "",
         type: "sale",
@@ -34,15 +35,60 @@ export default function NewDealPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSubmitError(null);
         setIsSubmitting(true);
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const value = Number(formData.value || 0);
+        const commission = Number(formData.commission || 0);
 
-        // In real app, would call dealsService.create()
-        console.log("Creating deal:", formData);
+        if (Number.isNaN(value) || Number.isNaN(commission)) {
+            setSubmitError("Value and commission must be valid numbers");
+            setIsSubmitting(false);
+            return;
+        }
 
-        router.push("/dashboard/deals");
+        try {
+            const payload = {
+                title: formData.title.trim(),
+                type: formData.type,
+                stage: formData.stage,
+                property: {
+                    id: `property-${formData.propertyTitle.trim().toLowerCase().replace(/\s+/g, "-")}`,
+                    title: formData.propertyTitle.trim(),
+                },
+                client: {
+                    id: `client-${formData.clientName.trim().toLowerCase().replace(/\s+/g, "-")}`,
+                    name: formData.clientName.trim(),
+                },
+                value,
+                commission,
+                expectedCloseDate: formData.expectedCloseDate,
+                notes: formData.notes,
+                agent: {
+                    id: "agent-current",
+                    name: "Current Agent",
+                },
+            };
+
+            const res = await fetch("/api/deals", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                setSubmitError(json?.error || "Failed to create deal");
+                return;
+            }
+
+            router.push("/dashboard/deals");
+            router.refresh();
+        } catch {
+            setSubmitError("Failed to create deal");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const updateField = (field: string, value: string) => {
@@ -231,6 +277,7 @@ export default function NewDealPage() {
                                 <CardTitle>Actions</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
+                                {submitError && <p className="text-sm text-red-600">{submitError}</p>}
                                 <Button
                                     type="submit"
                                     className="w-full gap-2"

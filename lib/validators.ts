@@ -55,6 +55,73 @@ export const createLeadSchema = z.object({
 
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
 
+export const createClientSchema = z.object({
+    name: z.string().min(1).max(120),
+    email: z.string().email(),
+    phone: z.string().min(5).max(30),
+    type: z.array(z.enum(["buyer", "seller", "tenant", "landlord"]))
+        .min(1)
+        .max(4),
+    nationality: z.string().default(""),
+    documents: z.array(z.object({
+        id: z.string(),
+        type: z.string(),
+        name: z.string(),
+        url: z.string(),
+    })).default([]),
+    properties: z.array(z.string()).default([]),
+    deals: z.array(z.string()).default([]),
+    notes: z.string().max(5000).default(""),
+});
+
+export type CreateClientInput = z.infer<typeof createClientSchema>;
+
+export const createDealSchema = z.object({
+    title: z.string().min(1).max(200),
+    type: z.enum(["sale", "rental"]),
+    stage: z.enum(["inquiry", "viewing", "offer", "negotiation", "agreement", "closed", "cancelled"]),
+    property: z.object({
+        id: z.string(),
+        title: z.string(),
+    }),
+    client: z.object({
+        id: z.string(),
+        name: z.string(),
+    }),
+    value: z.number().nonnegative(),
+    commission: z.number().nonnegative(),
+    agent: z.object({
+        id: z.string(),
+        name: z.string(),
+    }),
+    expectedCloseDate: z.string(),
+    actualCloseDate: z.string().optional(),
+    notes: z.string().max(5000).default(""),
+});
+
+export type CreateDealInput = z.infer<typeof createDealSchema>;
+
+export const createTransactionSchema = z.object({
+    type: z.enum(["sale", "rental_payment", "commission", "deposit", "refund"]),
+    status: z.enum(["pending", "completed", "failed", "cancelled"]),
+    amount: z.number().nonnegative(),
+    currency: z.string().default("AED"),
+    deal: z.object({
+        id: z.string(),
+        title: z.string(),
+    }),
+    client: z.object({
+        id: z.string(),
+        name: z.string(),
+    }),
+    description: z.string().max(5000).default(""),
+    paymentMethod: z.string().max(120),
+    reference: z.string().max(120),
+    completedAt: z.string().optional(),
+});
+
+export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
+
 // ─── Campaign Schemas ────────────────────────────────────────────────
 
 export const campaignStatusSchema = z.enum([

@@ -89,9 +89,25 @@ export default function DealDetailPage() {
     const [newNote, setNewNote] = useState("");
 
     useEffect(() => {
-        // Simulate fetching deal - in production, call API
-        setLoading(false);
-        setDeal(null);
+        const run = async () => {
+            setLoading(true);
+            try {
+                const dealId = Array.isArray(params.id) ? params.id[0] : params.id;
+                const res = await fetch(`/api/deals/${dealId}`, { cache: "no-store" });
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                    setDeal(null);
+                    return;
+                }
+                setDeal(json.data as Deal);
+            } catch {
+                setDeal(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void run();
     }, [params.id]);
 
     if (loading) {
