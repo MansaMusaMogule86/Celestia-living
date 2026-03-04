@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Route } from "next";
 import { propertiesService } from "@/server/services/propertiesService";
 import { leadsService } from "@/server/services/leadsService";
 import { dealsService } from "@/server/services/dealsService";
@@ -32,7 +33,15 @@ export default async function DashboardPage() {
   const recentLeads = await leadsService.getAll();
   const recentDeals = await dealsService.getAll();
 
-  const statsCards = [
+  const statsCards: Array<{
+    title: string;
+    value: number | string;
+    description: string;
+    icon: typeof Building2;
+    color: string;
+    bgColor: string;
+    href: Route;
+  }> = [
     {
       title: "Properties",
       value: propertyStats.total,

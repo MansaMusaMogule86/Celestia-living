@@ -6,10 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -36,8 +34,9 @@ export default function LoginPage() {
             const redirectTo = typeof window !== "undefined"
                 ? new URLSearchParams(window.location.search).get("redirect") || "/dashboard"
                 : "/dashboard";
-            router.push(redirectTo);
-            router.refresh();
+            if (typeof window !== "undefined") {
+                window.location.assign(redirectTo);
+            }
         } catch {
             setError("Something went wrong. Please try again.");
         } finally {

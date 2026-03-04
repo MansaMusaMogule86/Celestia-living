@@ -40,7 +40,9 @@ export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
 // ─── Queue Instances ─────────────────────────────────────────────────
 
 const defaultQueueOptions = {
-    connection: redis,
+    connection: {
+        url: redisUrl,
+    },
     defaultJobOptions: {
         attempts: 3,
         backoff: {
@@ -82,7 +84,11 @@ export const metricsFetchQueue = new Queue(
 // ─── Queue Events (for real-time UI updates) ─────────────────────────
 
 export function createQueueEvents(name: QueueName): QueueEvents {
-    return new QueueEvents(name, { connection: createRedisConnection() });
+    return new QueueEvents(name, {
+        connection: {
+            url: redisUrl,
+        },
+    });
 }
 
 // ─── Job Types ───────────────────────────────────────────────────────
