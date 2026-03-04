@@ -79,9 +79,25 @@ export default function LeadDetailPage() {
     const [newNote, setNewNote] = useState("");
 
     useEffect(() => {
-        // Simulate fetching lead - in production, call API
-        setLoading(false);
-        setLead(null);
+        const run = async () => {
+            setLoading(true);
+            try {
+                const leadId = Array.isArray(params.id) ? params.id[0] : params.id;
+                const res = await fetch(`/api/leads/${leadId}`, { cache: "no-store" });
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                    setLead(null);
+                    return;
+                }
+                setLead(json.data as Lead);
+            } catch {
+                setLead(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void run();
     }, [params.id]);
 
     if (loading) {
@@ -225,7 +241,9 @@ export default function LeadDetailPage() {
                                     <div>
                                         <p className="text-sm text-muted-foreground">Bedrooms</p>
                                         <p className="font-medium">
-                                            {lead.requirements.bedrooms.join(", ")} BR
+                                            {lead.requirements.bedrooms.length > 0
+                                                ? lead.requirements.bedrooms.map((bed) => (bed === 0 ? "Studio" : `${bed} BR`)).join(", ")
+                                                : "Not specified"}
                                         </p>
                                     </div>
                                 </div>
@@ -234,8 +252,15 @@ export default function LeadDetailPage() {
                                     <div>
                                         <p className="text-sm text-muted-foreground">Preferred Areas</p>
                                         <p className="font-medium">
-                                            {lead.requirements.areas.join(", ")}
+                                            {lead.requirements.areas.length > 0 ? lead.requirements.areas.join(", ") : "Not specified"}
                                         </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Tag className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Looking to</p>
+                                        <p className="font-medium capitalize">{lead.requirements.listingType}</p>
                                     </div>
                                 </div>
                             </div>
