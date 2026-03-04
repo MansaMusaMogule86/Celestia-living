@@ -111,14 +111,14 @@ export const automationActionTypeSchema = z.enum([
 
 export const automationActionSchema = z.object({
     type: automationActionTypeSchema,
-    config: z.record(z.union([z.string(), z.number(), z.boolean()])),
+    config: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
     order: z.number().int().min(0),
 });
 
 export const createAutomationRuleSchema = z.object({
     name: z.string().min(1).max(200),
     trigger: automationTriggerSchema,
-    triggerConfig: z.record(z.string()).default({}),
+    triggerConfig: z.record(z.string(), z.string()).default({}),
     actions: z.array(automationActionSchema).min(1, "Add at least one action"),
     portals: z.array(portalNameSchema).default([]),
     enabled: z.boolean().default(true),
