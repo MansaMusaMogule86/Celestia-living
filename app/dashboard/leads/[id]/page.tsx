@@ -25,6 +25,7 @@ import {
     ArrowUpRight,
 } from "lucide-react";
 import { Lead, LeadStatus, LeadPriority, LeadSource } from "@/lib/types";
+import { toast } from "sonner";
 
 const statusConfig: Record<LeadStatus, { label: string; color: string; bgColor: string }> = {
     new: { label: "New", color: "text-blue-700", bgColor: "bg-blue-100" },
@@ -76,7 +77,102 @@ export default function LeadDetailPage() {
     const router = useRouter();
     const [lead, setLead] = useState<Lead | null>(null);
     const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(false);
     const [newNote, setNewNote] = useState("");
+
+    const handleEditLead = async () => {
+        if (!lead) {
+            return;
+        }
+
+        const nextName = window.prompt("Update lead name", lead.name)?.trim();
+        if (!nextName || nextName === lead.name) {
+            return;
+        }
+
+        setActionLoading(true);
+        try {
+            const res = await fetch(`/api/leads/${lead.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: nextName }),
+            });
+            const json = await res.json();
+
+            if (!res.ok || !json.success) {
+                toast.error(json.message || "Failed to update lead");
+                return;
+            }
+
+            setLead(json.data as Lead);
+            toast.success("Lead updated");
+        } catch {
+            toast.error("Failed to update lead");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleConvertToClient = async () => {
+        if (!lead || lead.status === "converted") {
+            return;
+        }
+
+        setActionLoading(true);
+        try {
+            const res = await fetch(`/api/leads/${lead.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "converted" }),
+            });
+            const json = await res.json();
+
+            if (!res.ok || !json.success) {
+                toast.error(json.message || "Failed to convert lead");
+                return;
+            }
+
+            setLead(json.data as Lead);
+            toast.success("Lead marked as converted");
+        } catch {
+            toast.error("Failed to convert lead");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDeleteLead = async () => {
+        if (!lead) {
+            return;
+        }
+
+        const confirmed = window.confirm("Delete this lead? This action cannot be undone.");
+        if (!confirmed) {
+            return;
+        }
+
+        setActionLoading(true);
+        try {
+            const res = await fetch(`/api/leads/${lead.id}`, { method: "DELETE" });
+            const json = await res.json();
+
+            if (!res.ok || !json.success) {
+                if (res.status === 403) {
+                    toast.error("Only managers or admins can delete leads");
+                    return;
+                }
+                toast.error(json.message || "Failed to delete lead");
+                return;
+            }
+
+            toast.success("Lead deleted");
+            router.push("/dashboard/leads");
+        } catch {
+            toast.error("Failed to delete lead");
+        } finally {
+            setActionLoading(false);
+        }
+    };
 
     useEffect(() => {
         const run = async () => {
@@ -169,8 +265,20 @@ export default function LeadDetailPage() {
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline">Edit Lead</Button>
-                    <Button>Convert to Client</Button>
+                    <Button variant="outline" onClick={handleEditLead} disabled={actionLoading}>
+                        Edit Lead
+                    </Button>
+                    <Button onClick={handleConvertToClient} disabled={actionLoading || lead.status === "converted"}>
+                        Convert to Client
+                    </Button>
+                    <Button
+                        variant="outline"
+                        className="text-destructive hover:text-destructive"
+                        onClick={handleDeleteLead}
+                        disabled={actionLoading}
+                    >
+                        Delete Lead
+                    </Button>
                 </div>
             </div>
 

@@ -4,6 +4,7 @@ import { propertiesService } from "@/server/services/propertiesService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PropertyDetailActions } from "@/components/crm/PropertyDetailActions";
 import {
     ArrowLeft,
     Bed,
@@ -13,8 +14,6 @@ import {
     MapPin,
     User,
     Calendar,
-    Edit,
-    Trash2,
 } from "lucide-react";
 import { PropertyStatus } from "@/lib/types";
 
@@ -90,14 +89,7 @@ export default async function PropertyDetailPage({ params }: PropertyDetailPageP
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                    </Button>
-                    <Button variant="outline" className="text-destructive hover:text-destructive">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                    </Button>
+                    <PropertyDetailActions id={property.id} title={property.title} />
                 </div>
             </div>
 

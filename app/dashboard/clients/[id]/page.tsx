@@ -4,13 +4,12 @@ import { clientsService } from "@/server/services/clientsService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ClientDetailActions } from "@/components/crm/ClientDetailActions";
 import {
     ArrowLeft,
     Phone,
     Mail,
     Calendar,
-    Edit,
-    Trash2,
     Building2,
     Briefcase,
     FileText,
@@ -76,14 +75,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                    </Button>
-                    <Button variant="outline" className="text-destructive hover:text-destructive">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                    </Button>
+                    <ClientDetailActions id={client.id} name={client.name} />
                 </div>
             </div>
 
