@@ -294,17 +294,83 @@ export const dealsService = {
         }
     },
 
-    async update(id: string, updates: Partial<Deal>): Promise<Deal | null> {
-        await delay(100);
-        const index = mockDeals.findIndex(d => d.id === id);
-        if (index === -1) return null;
+    async update(id: string, updates: Partial<Deal>, teamId?: string): Promise<Deal | null> {
+        if (!prismaEnabled) {
+            await delay(100);
+            const index = mockDeals.findIndex(d => d.id === id);
+            if (index === -1) return null;
 
-        mockDeals[index] = {
-            ...mockDeals[index],
-            ...updates,
-            updatedAt: new Date().toISOString(),
-        };
-        return mockDeals[index];
+            mockDeals[index] = {
+                ...mockDeals[index],
+                ...updates,
+                updatedAt: new Date().toISOString(),
+            };
+            return mockDeals[index];
+        }
+
+        try {
+            const existing = await this.getById(id, teamId);
+            if (!existing) return null;
+
+            const merged: Deal = {
+                ...existing,
+                ...updates,
+                property: {
+                    ...existing.property,
+                    ...(updates.property || {}),
+                },
+                client: {
+                    ...existing.client,
+                    ...(updates.client || {}),
+                },
+                agent: {
+                    ...existing.agent,
+                    ...(updates.agent || {}),
+                },
+            };
+
+            const updated = await prisma.deal.update({
+                where: { id },
+                data: {
+                    title: merged.title,
+                    type: mapDealTypeToPrisma(merged.type),
+                    stage: mapDealStageToPrisma(merged.stage),
+                    value: merged.value,
+                    commission: merged.commission,
+                    expectedCloseDate: merged.expectedCloseDate ? new Date(merged.expectedCloseDate) : null,
+                    actualCloseDate: merged.actualCloseDate ? new Date(merged.actualCloseDate) : null,
+                    notes: merged.notes || null,
+                    propertyId: merged.property.id,
+                    clientId: merged.client.id,
+                    agentId: merged.agent.id,
+                },
+                include: {
+                    property: { select: { id: true, title: true } },
+                    client: { select: { id: true, firstName: true, lastName: true } },
+                    agent: { select: { id: true, firstName: true, lastName: true } },
+                    activities: {
+                        include: {
+                            createdBy: { select: { id: true, firstName: true, lastName: true } },
+                        },
+                        orderBy: { createdAt: "desc" },
+                    },
+                },
+            });
+
+            return toAppDeal(updated);
+        } catch {
+            prismaEnabled = false;
+            await delay(100);
+            const index = mockDeals.findIndex(d => d.id === id);
+            if (index === -1) return null;
+
+            mockDeals[index] = {
+                ...mockDeals[index],
+                ...updates,
+                updatedAt: new Date().toISOString(),
+            };
+            return mockDeals[index];
+        }
     },
 
     async updateStage(id: string, stage: DealStage): Promise<Deal | null> {
@@ -332,13 +398,33 @@ export const dealsService = {
         return deal;
     },
 
-    async delete(id: string): Promise<boolean> {
-        await delay(100);
-        const index = mockDeals.findIndex(d => d.id === id);
-        if (index === -1) return false;
+    async delete(id: string, teamId?: string): Promise<boolean> {
+        if (!prismaEnabled) {
+            await delay(100);
+            const index = mockDeals.findIndex(d => d.id === id);
+            if (index === -1) return false;
 
-        mockDeals.splice(index, 1);
-        return true;
+            mockDeals.splice(index, 1);
+            return true;
+        }
+
+        try {
+            const deleted = await prisma.deal.deleteMany({
+                where: {
+                    id,
+                    ...(teamId ? { teamId } : {}),
+                },
+            });
+            return deleted.count > 0;
+        } catch {
+            prismaEnabled = false;
+            await delay(100);
+            const index = mockDeals.findIndex(d => d.id === id);
+            if (index === -1) return false;
+
+            mockDeals.splice(index, 1);
+            return true;
+        }
     },
 
     async getStats(teamId?: string): Promise<{

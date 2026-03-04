@@ -194,17 +194,64 @@ export const clientsService = {
         }
     },
 
-    async update(id: string, updates: Partial<Client>): Promise<Client | null> {
-        await delay(100);
-        const index = mockClients.findIndex(c => c.id === id);
-        if (index === -1) return null;
+    async update(id: string, updates: Partial<Client>, teamId?: string): Promise<Client | null> {
+        if (!prismaEnabled) {
+            await delay(100);
+            const index = mockClients.findIndex(c => c.id === id);
+            if (index === -1) return null;
 
-        mockClients[index] = {
-            ...mockClients[index],
-            ...updates,
-            updatedAt: new Date().toISOString(),
-        };
-        return mockClients[index];
+            mockClients[index] = {
+                ...mockClients[index],
+                ...updates,
+                updatedAt: new Date().toISOString(),
+            };
+            return mockClients[index];
+        }
+
+        try {
+            const existing = await this.getById(id, teamId);
+            if (!existing) return null;
+
+            const merged: Client = {
+                ...existing,
+                ...updates,
+            };
+
+            const [firstName, ...rest] = merged.name.trim().split(/\s+/);
+            const lastName = rest.join(" ") || "Client";
+
+            const updated = await prisma.client.update({
+                where: { id },
+                data: {
+                    firstName: firstName || "Client",
+                    lastName,
+                    email: merged.email || null,
+                    phone: merged.phone || null,
+                    nationality: merged.nationality || null,
+                    type: merged.type.map(mapClientTypeToPrisma),
+                    notes: merged.notes || null,
+                },
+                include: {
+                    deals: {
+                        select: { id: true },
+                    },
+                },
+            });
+
+            return toAppClient(updated);
+        } catch {
+            prismaEnabled = false;
+            await delay(100);
+            const index = mockClients.findIndex(c => c.id === id);
+            if (index === -1) return null;
+
+            mockClients[index] = {
+                ...mockClients[index],
+                ...updates,
+                updatedAt: new Date().toISOString(),
+            };
+            return mockClients[index];
+        }
     },
 
     async addDocument(
@@ -232,13 +279,31 @@ export const clientsService = {
         return client;
     },
 
-    async delete(id: string): Promise<boolean> {
-        await delay(100);
-        const index = mockClients.findIndex(c => c.id === id);
-        if (index === -1) return false;
+    async delete(id: string, teamId?: string): Promise<boolean> {
+        if (!prismaEnabled) {
+            await delay(100);
+            const index = mockClients.findIndex(c => c.id === id);
+            if (index === -1) return false;
+            mockClients.splice(index, 1);
+            return true;
+        }
 
-        mockClients.splice(index, 1);
-        return true;
+        try {
+            const deleted = await prisma.client.deleteMany({
+                where: {
+                    id,
+                    ...(teamId ? { teamId } : {}),
+                },
+            });
+            return deleted.count > 0;
+        } catch {
+            prismaEnabled = false;
+            await delay(100);
+            const index = mockClients.findIndex(c => c.id === id);
+            if (index === -1) return false;
+            mockClients.splice(index, 1);
+            return true;
+        }
     },
 
     async search(query: string): Promise<Client[]> {

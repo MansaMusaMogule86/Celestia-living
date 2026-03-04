@@ -241,16 +241,69 @@ export const transactionsService = {
         }
     },
 
-    async update(id: string, updates: Partial<Transaction>): Promise<Transaction | null> {
-        await delay(100);
-        const index = mockTransactions.findIndex(t => t.id === id);
-        if (index === -1) return null;
+    async update(id: string, updates: Partial<Transaction>, teamId?: string): Promise<Transaction | null> {
+        if (!prismaEnabled) {
+            await delay(100);
+            const index = mockTransactions.findIndex(t => t.id === id);
+            if (index === -1) return null;
 
-        mockTransactions[index] = {
-            ...mockTransactions[index],
-            ...updates,
-        };
-        return mockTransactions[index];
+            mockTransactions[index] = {
+                ...mockTransactions[index],
+                ...updates,
+            };
+            return mockTransactions[index];
+        }
+
+        try {
+            const existing = await this.getById(id, teamId);
+            if (!existing) return null;
+
+            const merged: Transaction = {
+                ...existing,
+                ...updates,
+                deal: {
+                    ...existing.deal,
+                    ...(updates.deal || {}),
+                },
+                client: {
+                    ...existing.client,
+                    ...(updates.client || {}),
+                },
+            };
+
+            const updated = await prisma.transaction.update({
+                where: { id },
+                data: {
+                    type: mapTypeToPrisma(merged.type),
+                    status: mapStatusToPrisma(merged.status),
+                    amount: merged.amount,
+                    currency: merged.currency || "AED",
+                    description: merged.description || null,
+                    paymentMethod: merged.paymentMethod || null,
+                    reference: merged.reference || null,
+                    dealId: merged.deal.id || null,
+                    clientId: merged.client.id || null,
+                    completedAt: merged.completedAt ? new Date(merged.completedAt) : null,
+                },
+                include: {
+                    deal: { select: { id: true, title: true } },
+                    client: { select: { id: true, firstName: true, lastName: true } },
+                },
+            });
+
+            return toAppTransaction(updated);
+        } catch {
+            prismaEnabled = false;
+            await delay(100);
+            const index = mockTransactions.findIndex(t => t.id === id);
+            if (index === -1) return null;
+
+            mockTransactions[index] = {
+                ...mockTransactions[index],
+                ...updates,
+            };
+            return mockTransactions[index];
+        }
     },
 
     async complete(id: string): Promise<Transaction | null> {
@@ -262,6 +315,35 @@ export const transactionsService = {
 
     async cancel(id: string): Promise<Transaction | null> {
         return this.update(id, { status: "cancelled" });
+    },
+
+    async delete(id: string, teamId?: string): Promise<boolean> {
+        if (!prismaEnabled) {
+            await delay(100);
+            const index = mockTransactions.findIndex(t => t.id === id);
+            if (index === -1) return false;
+
+            mockTransactions.splice(index, 1);
+            return true;
+        }
+
+        try {
+            const deleted = await prisma.transaction.deleteMany({
+                where: {
+                    id,
+                    ...(teamId ? { teamId } : {}),
+                },
+            });
+            return deleted.count > 0;
+        } catch {
+            prismaEnabled = false;
+            await delay(100);
+            const index = mockTransactions.findIndex(t => t.id === id);
+            if (index === -1) return false;
+
+            mockTransactions.splice(index, 1);
+            return true;
+        }
     },
 
     async getStats(teamId?: string): Promise<{

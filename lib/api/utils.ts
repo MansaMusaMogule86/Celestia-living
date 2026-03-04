@@ -26,6 +26,10 @@ export async function handleApiRoute(handler: () => Promise<NextResponse>) {
             return errorResponse("Unauthorized", 401);
         }
 
+        if (error.message === "Forbidden") {
+            return errorResponse("Forbidden", 403);
+        }
+
         if (error.message === "Not Found") {
             return errorResponse("Not Found", 404);
         }

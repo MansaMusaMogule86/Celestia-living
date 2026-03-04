@@ -54,6 +54,8 @@ export const createLeadSchema = z.object({
 });
 
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
+export const updateLeadSchema = createLeadSchema.partial();
+export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
 
 export const createClientSchema = z.object({
     name: z.string().min(1).max(120),
@@ -75,6 +77,8 @@ export const createClientSchema = z.object({
 });
 
 export type CreateClientInput = z.infer<typeof createClientSchema>;
+export const updateClientSchema = createClientSchema.partial();
+export type UpdateClientInput = z.infer<typeof updateClientSchema>;
 
 export const createDealSchema = z.object({
     title: z.string().min(1).max(200),
@@ -100,6 +104,8 @@ export const createDealSchema = z.object({
 });
 
 export type CreateDealInput = z.infer<typeof createDealSchema>;
+export const updateDealSchema = createDealSchema.partial();
+export type UpdateDealInput = z.infer<typeof updateDealSchema>;
 
 export const createTransactionSchema = z.object({
     type: z.enum(["sale", "rental_payment", "commission", "deposit", "refund"]),
@@ -121,6 +127,8 @@ export const createTransactionSchema = z.object({
 });
 
 export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
+export const updateTransactionSchema = createTransactionSchema.partial();
+export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>;
 
 export const createPropertySchema = z.object({
     title: z.string().min(1).max(200),
@@ -152,6 +160,8 @@ export const createPropertySchema = z.object({
 });
 
 export type CreatePropertyInput = z.infer<typeof createPropertySchema>;
+export const updatePropertySchema = createPropertySchema.partial();
+export type UpdatePropertyInput = z.infer<typeof updatePropertySchema>;
 
 export const crmSettingsSchema = z.object({
     companyName: z.string().min(1).max(200),

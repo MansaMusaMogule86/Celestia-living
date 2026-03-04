@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
-import { propertiesService } from "@/server/services/propertiesService";
+import { transactionsService } from "@/server/services/transactionsService";
 import { handleApiRoute, successResponse, errorResponse } from "@/lib/api/utils";
 import { requireAuth } from "@/lib/auth/session";
 import { ensureCanDelete } from "@/lib/auth/authorization";
-import { updatePropertySchema } from "@/lib/validators";
+import { updateTransactionSchema } from "@/lib/validators";
 
 export async function GET(
     _req: NextRequest,
@@ -13,12 +13,12 @@ export async function GET(
         const session = await requireAuth();
         const { id } = await params;
 
-        const property = await propertiesService.getById(id, session.teamId);
-        if (!property) {
-            return errorResponse("Property not found", 404);
+        const transaction = await transactionsService.getById(id, session.teamId);
+        if (!transaction) {
+            return errorResponse("Transaction not found", 404);
         }
 
-        return successResponse(property);
+        return successResponse(transaction);
     });
 }
 
@@ -30,14 +30,14 @@ export async function PATCH(
         const session = await requireAuth();
         const { id } = await params;
         const body = await req.json();
-        const updates = updatePropertySchema.parse(body);
+        const updates = updateTransactionSchema.parse(body);
 
-        const property = await propertiesService.update(id, updates, session.userId, session.teamId);
-        if (!property) {
-            return errorResponse("Property not found", 404);
+        const transaction = await transactionsService.update(id, updates, session.teamId);
+        if (!transaction) {
+            return errorResponse("Transaction not found", 404);
         }
 
-        return successResponse(property);
+        return successResponse(transaction);
     });
 }
 
@@ -50,9 +50,9 @@ export async function DELETE(
         ensureCanDelete(session);
 
         const { id } = await params;
-        const deleted = await propertiesService.delete(id, session.teamId);
+        const deleted = await transactionsService.delete(id, session.teamId);
         if (!deleted) {
-            return errorResponse("Property not found", 404);
+            return errorResponse("Transaction not found", 404);
         }
 
         return successResponse({ deleted: true });

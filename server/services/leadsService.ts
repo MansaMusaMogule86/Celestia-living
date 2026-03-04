@@ -303,17 +303,83 @@ export const leadsService = {
         }
     },
 
-    async update(id: string, updates: Partial<Lead>): Promise<Lead | null> {
-        await delay(100);
-        const index = mockLeads.findIndex(l => l.id === id);
-        if (index === -1) return null;
+    async update(id: string, updates: Partial<Lead>, teamId?: string): Promise<Lead | null> {
+        if (!prismaEnabled) {
+            await delay(100);
+            const index = mockLeads.findIndex(l => l.id === id);
+            if (index === -1) return null;
 
-        mockLeads[index] = {
-            ...mockLeads[index],
-            ...updates,
-            updatedAt: new Date().toISOString(),
-        };
-        return mockLeads[index];
+            mockLeads[index] = {
+                ...mockLeads[index],
+                ...updates,
+                updatedAt: new Date().toISOString(),
+            };
+            return mockLeads[index];
+        }
+
+        try {
+            const existing = await this.getById(id, teamId);
+            if (!existing) return null;
+
+            const merged: Lead = {
+                ...existing,
+                ...updates,
+                budget: {
+                    ...existing.budget,
+                    ...(updates.budget || {}),
+                },
+                requirements: {
+                    ...existing.requirements,
+                    ...(updates.requirements || {}),
+                },
+            };
+
+            const [firstName, ...rest] = merged.name.trim().split(/\s+/);
+            const lastName = rest.join(" ") || "Lead";
+
+            const updated = await prisma.lead.update({
+                where: { id },
+                data: {
+                    firstName: firstName || "Lead",
+                    lastName,
+                    email: merged.email || null,
+                    phone: merged.phone || null,
+                    status: mapStatusToPrisma(merged.status),
+                    source: mapSourceToPrisma(merged.source),
+                    message: JSON.stringify({
+                        notes: merged.notes,
+                        priority: merged.priority,
+                        budget: merged.budget,
+                        requirements: merged.requirements,
+                        sourceFallback: merged.source,
+                    }),
+                    tags: [
+                        `priority:${merged.priority}`,
+                        `listingType:${merged.requirements.listingType}`,
+                    ],
+                    assignedToId: merged.assignedTo?.id || null,
+                },
+                include: {
+                    assignedTo: {
+                        select: { id: true, firstName: true, lastName: true },
+                    },
+                },
+            });
+
+            return toAppLead(updated);
+        } catch {
+            prismaEnabled = false;
+            await delay(100);
+            const index = mockLeads.findIndex(l => l.id === id);
+            if (index === -1) return null;
+
+            mockLeads[index] = {
+                ...mockLeads[index],
+                ...updates,
+                updatedAt: new Date().toISOString(),
+            };
+            return mockLeads[index];
+        }
     },
 
     async updateStatus(id: string, status: LeadStatus): Promise<Lead | null> {
@@ -324,13 +390,31 @@ export const leadsService = {
         return this.update(id, { assignedTo: agent });
     },
 
-    async delete(id: string): Promise<boolean> {
-        await delay(100);
-        const index = mockLeads.findIndex(l => l.id === id);
-        if (index === -1) return false;
+    async delete(id: string, teamId?: string): Promise<boolean> {
+        if (!prismaEnabled) {
+            await delay(100);
+            const index = mockLeads.findIndex(l => l.id === id);
+            if (index === -1) return false;
+            mockLeads.splice(index, 1);
+            return true;
+        }
 
-        mockLeads.splice(index, 1);
-        return true;
+        try {
+            const deleted = await prisma.lead.deleteMany({
+                where: {
+                    id,
+                    ...(teamId ? { teamId } : {}),
+                },
+            });
+            return deleted.count > 0;
+        } catch {
+            prismaEnabled = false;
+            await delay(100);
+            const index = mockLeads.findIndex(l => l.id === id);
+            if (index === -1) return false;
+            mockLeads.splice(index, 1);
+            return true;
+        }
     },
 
     async search(query: string): Promise<Lead[]> {
