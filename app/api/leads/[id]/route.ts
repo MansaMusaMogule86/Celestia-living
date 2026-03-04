@@ -8,10 +8,10 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     return handleApiRoute(async () => {
-        await requireAuth();
+        const session = await requireAuth();
         const { id } = await params;
 
-        const lead = await leadsService.getById(id);
+        const lead = await leadsService.getById(id, session.teamId);
         if (!lead) {
             return errorResponse("Lead not found", 404);
         }

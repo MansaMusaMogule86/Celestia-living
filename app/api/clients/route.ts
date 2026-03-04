@@ -6,18 +6,20 @@ import { requireAuth } from "@/lib/auth/session";
 
 export async function GET() {
     return handleApiRoute(async () => {
-        await requireAuth();
-        const clients = await clientsService.getAll();
+        const session = await requireAuth();
+        const clients = await clientsService.getAll(session.teamId);
         return successResponse(clients);
     });
 }
 
 export async function POST(request: NextRequest) {
     return handleApiRoute(async () => {
-        await requireAuth();
+        const session = await requireAuth();
         const body = await request.json();
         const payload = createClientSchema.parse(body);
-        const client = await clientsService.create(payload);
+        const client = await clientsService.create(payload, {
+            teamId: session.teamId,
+        });
         return successResponse(client, 201);
     });
 }

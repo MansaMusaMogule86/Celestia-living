@@ -8,9 +8,9 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     return handleApiRoute(async () => {
-        await requireAuth();
+        const session = await requireAuth();
         const { id } = await params;
-        const client = await clientsService.getById(id);
+        const client = await clientsService.getById(id, session.teamId);
         if (!client) {
             return errorResponse("Client not found", 404);
         }

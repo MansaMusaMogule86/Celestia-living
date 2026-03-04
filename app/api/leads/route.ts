@@ -6,18 +6,21 @@ import { createLeadSchema } from "@/lib/validators";
 
 export async function GET() {
     return handleApiRoute(async () => {
-        await requireAuth();
-        const leads = await leadsService.getAll();
+        const session = await requireAuth();
+        const leads = await leadsService.getAll(session.teamId);
         return successResponse(leads);
     });
 }
 
 export async function POST(request: NextRequest) {
     return handleApiRoute(async () => {
-        await requireAuth();
+        const session = await requireAuth();
         const body = await request.json();
         const payload = createLeadSchema.parse(body);
-        const lead = await leadsService.create(payload);
+        const lead = await leadsService.create(payload, {
+            teamId: session.teamId,
+            userId: session.userId,
+        });
         return successResponse(lead, 201);
     });
 }
