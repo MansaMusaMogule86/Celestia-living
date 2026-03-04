@@ -1,0 +1,800 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Core Auth & Org ─────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  avatar       String?
+  role         UserRole @default(AGENT)
+
+  teamId String?
+  team   Team?   @relation(fields: [teamId], references: [id])
+
+  campaigns        Campaign[]
+  automationRules  AutomationRule[]
+  assignedLeads    Lead[]
+  activityLogs     ActivityLog[]
+  notifications    Notification[]
+  deals            Deal[]          @relation("AgentDeals")
+  dealActivities   DealActivity[]  @relation("DealActivityCreator")
+  appointments     Appointment[]   @relation("AgentAppointments")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([teamId])
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  AGENT
+}
+
+model Team {
+  id      String @id @default(cuid())
+  name    String
+  slug    String @unique
+  logoUrl String?
+
+  members           User[]
+  properties        Property[]
+  campaigns         Campaign[]
+  automationRules   AutomationRule[]
+  portalConnections PortalConnection[]
+  postTemplates     PostTemplate[]
+  leads             Lead[]
+  clients           Client[]
+  deals             Deal[]
+  transactions      Transaction[]
+  appointments      Appointment[]
+  documents         Document[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+}
+
+// ─── Properties ──────────────────────────────────────────────────────
+
+model Property {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  type        PropertyType
+  purpose     PropertyPurpose
+  status      PropertyStatus @default(AVAILABLE)
+
+  price       Decimal
+  currency    String         @default("AED")
+  area        String?        // e.g. "Dubai Marina"
+  location    String?        // Full address
+  latitude    Decimal?
+  longitude   Decimal?
+  bedrooms    Int?
+  bathrooms   Int?
+  sizeSqFt    Int?
+
+  images      String[]       // S3 URLs
+  floorPlan   String?
+  videoUrl    String?
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  campaigns    Campaign[]
+  deals        Deal[]
+  appointments Appointment[]
+
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teamId])
+  @@index([status])
+  @@index([type, purpose])
+  @@index([price])
+  @@index([area])
+}
+
+enum PropertyType {
+  APARTMENT
+  VILLA
+  TOWNHOUSE
+  PENTHOUSE
+  STUDIO
+  OFFICE
+  WAREHOUSE
+  LAND
+  COMMERCIAL
+}
+
+enum PropertyPurpose {
+  SALE
+  RENT
+  SHORT_TERM_RENT
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  UNDER_OFFER
+  SOLD
+  RENTED
+  OFF_MARKET
+}
+
+// ─── Clients ────────────────────────────────────────────────────────
+
+model Client {
+  id          String       @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String?
+  nationality String?
+  type        ClientType[] @default([BUYER])
+  status      ClientStatus @default(LEAD_COLD)
+  leadOrigin  LeadOrigin   @default(DIRECT)
+
+  // Preferences for property matching
+  budgetMin          Decimal?
+  budgetMax          Decimal?
+  preferredLocations String[]
+  bedroomsMin        Int?
+  bathroomsMin       Int?
+  preferredType      PropertyType?
+  paymentType        String?       // cash, mortgage
+  mustHaveFeatures   String[]
+  niceToHaveFeatures String[]
+
+  notes String?
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  deals        Deal[]
+  appointments Appointment[]
+  documents    Document[]
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teamId])
+  @@index([email])
+  @@index([status])
+}
+
+enum ClientType {
+  BUYER
+  SELLER
+  TENANT
+  LANDLORD
+}
+
+enum ClientStatus {
+  LEAD_COLD
+  LEAD_WARM
+  CONTACTED
+  QUALIFIED
+  VIP
+  REFERRAL
+  CONVERTED
+  LOST
+}
+
+enum LeadOrigin {
+  DIRECT
+  REFERRAL
+  WEBSITE
+  SOCIAL_MEDIA
+  BAYUT
+  PROPERTY_FINDER
+  DUBIZZLE
+  ADVERTISEMENT
+  EVENT
+  PARTNER
+  OTHER
+}
+
+// ─── Deals ──────────────────────────────────────────────────────────
+
+model Deal {
+  id    String    @id @default(cuid())
+  title String
+  type  DealType
+  stage DealStage @default(INQUIRY)
+
+  value      Decimal @default(0)
+  commission Decimal @default(0)
+
+  expectedCloseDate DateTime?
+  actualCloseDate   DateTime?
+  notes             String?
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  agentId String
+  agent   User   @relation("AgentDeals", fields: [agentId], references: [id])
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  activities   DealActivity[]
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teamId])
+  @@index([stage])
+  @@index([clientId])
+  @@index([propertyId])
+  @@index([agentId])
+}
+
+enum DealType {
+  SALE
+  RENTAL
+}
+
+enum DealStage {
+  INQUIRY
+  VIEWING
+  OFFER
+  NEGOTIATION
+  AGREEMENT
+  CLOSED
+  CANCELLED
+}
+
+model DealActivity {
+  id          String @id @default(cuid())
+  type        String // note, viewing, offer, call, email, meeting
+  description String
+
+  dealId String
+  deal   Deal   @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation("DealActivityCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([dealId])
+}
+
+// ─── Transactions ───────────────────────────────────────────────────
+
+model Transaction {
+  id     String            @id @default(cuid())
+  type   TransactionType
+  status TransactionStatus @default(PENDING)
+  amount Decimal
+  currency String          @default("AED")
+
+  description   String?
+  paymentMethod String?
+  reference     String?
+
+  dealId String?
+  deal   Deal?  @relation(fields: [dealId], references: [id])
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([teamId])
+  @@index([dealId])
+  @@index([clientId])
+  @@index([status])
+}
+
+enum TransactionType {
+  SALE
+  RENTAL_PAYMENT
+  COMMISSION
+  DEPOSIT
+  REFUND
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ─── Appointments & Calendar ────────────────────────────────────────
+
+model Appointment {
+  id          String          @id @default(cuid())
+  title       String
+  description String?
+  type        AppointmentType
+  startTime   DateTime
+  endTime     DateTime
+  location    String?
+
+  googleEventId String?      // For Google Calendar sync
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id])
+
+  agentId String
+  agent   User   @relation("AgentAppointments", fields: [agentId], references: [id])
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teamId])
+  @@index([agentId])
+  @@index([startTime])
+}
+
+enum AppointmentType {
+  CLIENT_MEETING
+  PROPERTY_VIEWING
+  FOLLOW_UP
+  CALL
+  OTHER
+}
+
+// ─── Documents & E-Signatures ───────────────────────────────────────
+
+model Document {
+  id           String         @id @default(cuid())
+  name         String
+  templateName String?
+  formData     Json?
+  signatureUrl String?
+  pdfUrl       String?
+  status       DocumentStatus @default(DRAFT)
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  createdAt DateTime  @default(now())
+  signedAt  DateTime?
+
+  @@index([teamId])
+  @@index([clientId])
+  @@index([status])
+}
+
+enum DocumentStatus {
+  DRAFT
+  SENT
+  SIGNED
+  COMPLETED
+}
+
+// ─── Portal Connections ──────────────────────────────────────────────
+
+model PortalConnection {
+  id       String     @id @default(cuid())
+  portal   PortalName
+  status   PortalConnectionStatus @default(DISCONNECTED)
+
+  accessToken  String?
+  refreshToken String?
+  expiresAt    DateTime?
+  accountId    String?
+  accountName  String?
+  webhookUrl   String?
+  webhookSecret String?
+
+  // Automation settings per portal
+  autoPublish        Boolean @default(false)
+  autoRepostDays     Int     @default(0)
+  leadAssignment     LeadAssignment @default(MANUAL)
+  defaultTemplateId  String?
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  campaignPosts    CampaignPost[]
+  engagementMetrics EngagementMetric[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([teamId, portal])
+  @@index([teamId])
+  @@index([portal])
+}
+
+enum PortalName {
+  INSTAGRAM
+  FACEBOOK
+  TIKTOK
+  YOUTUBE
+  LINKEDIN
+  X_TWITTER
+  SNAPCHAT
+  WHATSAPP
+  TELEGRAM
+  PINTEREST
+  DUBIZZLE
+  PROPERTY_FINDER
+  BAYUT
+}
+
+enum PortalConnectionStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  RATE_LIMITED
+}
+
+enum LeadAssignment {
+  ROUND_ROBIN
+  MANUAL
+  AUTO_ASSIGN
+}
+
+// ─── Campaigns ───────────────────────────────────────────────────────
+
+model Campaign {
+  id      String         @id @default(cuid())
+  title   String
+  caption String
+  status  CampaignStatus @default(DRAFT)
+
+  scheduleType ScheduleType @default(IMMEDIATE)
+  scheduledAt  DateTime?
+  publishedAt  DateTime?
+  archivedAt   DateTime?
+
+  hashtags  String[]
+  mediaUrls String[]     // S3 URLs for images/videos
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id])
+
+  templateId String?
+  template   PostTemplate? @relation(fields: [templateId], references: [id])
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  posts         CampaignPost[]
+  scheduledJobs ScheduledJob[]
+
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teamId])
+  @@index([status])
+  @@index([propertyId])
+  @@index([createdById])
+  @@index([scheduledAt])
+  @@index([isDeleted])
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHING
+  LIVE
+  FAILED
+  ARCHIVED
+}
+
+enum ScheduleType {
+  IMMEDIATE
+  SCHEDULED
+  RECURRING
+}
+
+// ─── Campaign Posts (per-portal) ─────────────────────────────────────
+
+model CampaignPost {
+  id     String     @id @default(cuid())
+  status PostStatus @default(PENDING)
+
+  platformPostId String?  // ID returned by the portal API
+  platformUrl    String?  // Direct link to the post
+  errorMessage   String?
+  retryCount     Int      @default(0)
+  maxRetries     Int      @default(3)
+
+  publishedAt DateTime?
+
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  portalConnectionId String
+  portalConnection   PortalConnection @relation(fields: [portalConnectionId], references: [id])
+
+  portal PortalName
+
+  engagementMetrics EngagementMetric[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([campaignId])
+  @@index([portalConnectionId])
+  @@index([status])
+  @@index([portal])
+}
+
+enum PostStatus {
+  PENDING
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  PAUSED
+  DELETED
+}
+
+// ─── Scheduled Jobs ──────────────────────────────────────────────────
+
+model ScheduledJob {
+  id         String    @id @default(cuid())
+  type       JobType
+  status     JobStatus @default(PENDING)
+
+  scheduledAt DateTime
+  executedAt  DateTime?
+  nextRunAt   DateTime?
+
+  payload    Json       // Serialised job data
+  result     Json?      // Execution result
+  error      String?
+
+  retryCount Int @default(0)
+  maxRetries Int @default(3)
+
+  bullJobId String?    // BullMQ job ID for pause/resume
+
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([campaignId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([type])
+}
+
+enum JobType {
+  PUBLISH
+  REPOST
+  UNPUBLISH
+  UPDATE
+  SYNC_METRICS
+  SYNC_PORTAL
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+  PAUSED
+}
+
+// ─── Automation Rules ────────────────────────────────────────────────
+
+model AutomationRule {
+  id      String  @id @default(cuid())
+  name    String
+  enabled Boolean @default(true)
+
+  trigger       AutomationTrigger
+  triggerConfig Json              // e.g. { priceMin: 5000000 }
+
+  actions Json                   // Array of { type, config, order }
+
+  portals PortalName[]
+
+  triggerCount    Int      @default(0)
+  lastTriggeredAt DateTime?
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teamId])
+  @@index([trigger])
+  @@index([enabled])
+}
+
+enum AutomationTrigger {
+  PROPERTY_CREATED
+  PROPERTY_UPDATED
+  PRICE_CHANGED
+  STATUS_CHANGED
+  OPEN_HOUSE_SCHEDULED
+  MANUAL
+}
+
+// ─── Post Templates ──────────────────────────────────────────────────
+
+model PostTemplate {
+  id      String @id @default(cuid())
+  name    String
+  caption String
+  hashtags String[]
+  portals  PortalName[]
+  variables String[]    // e.g. ["{{price}}", "{{location}}"]
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  campaigns Campaign[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teamId])
+}
+
+// ─── Engagement Metrics ──────────────────────────────────────────────
+
+model EngagementMetric {
+  id     String @id @default(cuid())
+  period String @default("daily") // daily, weekly, monthly
+
+  impressions Int @default(0)
+  clicks      Int @default(0)
+  likes       Int @default(0)
+  comments    Int @default(0)
+  shares      Int @default(0)
+  saves       Int @default(0)
+  reach       Int @default(0)
+
+  leadsGenerated Int     @default(0)
+  conversionRate Decimal @default(0)
+  costPerLead    Decimal @default(0)
+  engagementRate Decimal @default(0)
+
+  portalConnectionId String
+  portalConnection   PortalConnection @relation(fields: [portalConnectionId], references: [id])
+
+  campaignPostId String?
+  campaignPost   CampaignPost? @relation(fields: [campaignPostId], references: [id])
+
+  recordedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([portalConnectionId])
+  @@index([campaignPostId])
+  @@index([recordedAt])
+  @@index([period])
+}
+
+// ─── Leads ───────────────────────────────────────────────────────────
+
+model Lead {
+  id        String     @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  status    LeadStatus @default(NEW)
+
+  source      PortalName?
+  sourceRefId String?     // Reference on the source portal
+  message     String?
+
+  score Int @default(0)
+  tags  String[]
+
+  assignedToId String?
+  assignedTo   User?  @relation(fields: [assignedToId], references: [id])
+
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teamId])
+  @@index([status])
+  @@index([assignedToId])
+  @@index([source])
+  @@index([email])
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  NEGOTIATING
+  WON
+  LOST
+}
+
+// ─── Activity Log ────────────────────────────────────────────────────
+
+model ActivityLog {
+  id       String @id @default(cuid())
+  action   String // e.g. "campaign.created", "post.published"
+  entity   String // e.g. "Campaign", "CampaignPost"
+  entityId String
+  metadata Json?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ─── Notifications ───────────────────────────────────────────────────
+
+model Notification {
+  id       String           @id @default(cuid())
+  type     NotificationType
+  title    String
+  body     String
+  metadata Json?
+  read     Boolean          @default(false)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  CAMPAIGN_PUBLISHED
+  CAMPAIGN_FAILED
+  NEW_LEAD
+  AUTOMATION_TRIGGERED
+  PORTAL_ERROR
+  SYSTEM
+}
