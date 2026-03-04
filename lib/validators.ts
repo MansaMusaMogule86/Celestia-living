@@ -153,6 +153,37 @@ export const createPropertySchema = z.object({
 
 export type CreatePropertyInput = z.infer<typeof createPropertySchema>;
 
+export const crmSettingsSchema = z.object({
+    companyName: z.string().min(1).max(200),
+    email: z.string().email(),
+    phone: z.string().min(5).max(30),
+    address: z.string().min(1).max(300),
+    currency: z.string().min(2).max(10),
+    emailNotifications: z.boolean(),
+    smsNotifications: z.boolean(),
+    autoSync: z.boolean(),
+    darkMode: z.boolean(),
+});
+
+export const updateCrmSettingsSchema = crmSettingsSchema.partial();
+
+export type CrmSettingsInput = z.infer<typeof crmSettingsSchema>;
+export type UpdateCrmSettingsInput = z.infer<typeof updateCrmSettingsSchema>;
+
+export const createAppointmentSchema = z.object({
+    title: z.string().min(1).max(200),
+    type: z.enum(["viewing", "meeting", "follow_up", "call", "other"]),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    startTime: z.string().regex(/^\d{2}:\d{2}$/),
+    endTime: z.string().regex(/^\d{2}:\d{2}$/),
+    client: z.string().max(120).optional(),
+    property: z.string().max(200).optional(),
+    location: z.string().max(200).optional(),
+    notes: z.string().max(5000).optional(),
+});
+
+export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
+
 // ─── Campaign Schemas ────────────────────────────────────────────────
 
 export const campaignStatusSchema = z.enum([
