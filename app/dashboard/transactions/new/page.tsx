@@ -70,14 +70,16 @@ export default function NewTransactionPage() {
             });
 
             const json = await res.json();
+            console.log("[Transaction] create response", { status: res.status, body: json });
             if (!res.ok || !json.success) {
                 setSubmitError(json?.error || "Failed to create transaction");
                 return;
             }
 
-            router.push("/dashboard/transactions");
-            router.refresh();
-        } catch {
+            // Navigate back to the list and ensure the server data is refetched
+            await router.push("/dashboard/transactions");
+        } catch (error) {
+            console.error("Failed to create transaction", error);
             setSubmitError("Failed to create transaction");
         } finally {
             setIsSubmitting(false);

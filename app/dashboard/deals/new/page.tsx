@@ -77,14 +77,16 @@ export default function NewDealPage() {
             });
 
             const json = await res.json();
+            console.log("[Deal] create response", { status: res.status, body: json });
             if (!res.ok || !json.success) {
                 setSubmitError(json?.error || "Failed to create deal");
                 return;
             }
 
-            router.push("/dashboard/deals");
-            router.refresh();
-        } catch {
+            // Navigate back to the list and ensure the server data is refetched
+            await router.push("/dashboard/deals");
+        } catch (error) {
+            console.error("Failed to create deal", error);
             setSubmitError("Failed to create deal");
         } finally {
             setIsSubmitting(false);

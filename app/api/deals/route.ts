@@ -17,10 +17,12 @@ export async function POST(request: NextRequest) {
         const session = await requireAuth();
         const body = await request.json();
         const payload = createDealSchema.parse(body);
+        console.log("[API] POST /api/deals payload:", payload);
         const deal = await dealsService.create(payload, {
             teamId: session.teamId,
             userId: session.userId,
         });
+        console.log("[API] POST /api/deals created:", deal);
         return successResponse(deal, 201);
     });
 }

@@ -17,7 +17,9 @@ export async function POST(request: NextRequest) {
         const session = await requireAuth();
         const body = await request.json();
         const payload = createPropertySchema.parse(body);
+        console.log("[API] POST /api/properties payload:", payload);
         const property = await propertiesService.create(payload, session.userId, session.teamId);
+        console.log("[API] POST /api/properties created:", property);
         return successResponse(property, 201);
     });
 }

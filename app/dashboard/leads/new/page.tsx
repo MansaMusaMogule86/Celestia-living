@@ -185,15 +185,17 @@ export default function NewLeadPage() {
             });
 
             const result = await response.json();
+            console.log("[Lead] create response", { status: response.status, body: result });
 
             if (!response.ok || !result.success) {
                 setSubmitError(result?.error || "Failed to create lead. Please try again.");
                 return;
             }
 
-            router.push("/dashboard/leads");
-            router.refresh();
-        } catch {
+            // Navigate back to the list and ensure the server data is refetched
+            await router.push("/dashboard/leads");
+        } catch (error) {
+            console.error("Failed to create lead", error);
             setSubmitError("Failed to create lead. Please try again.");
         } finally {
             setIsSubmitting(false);

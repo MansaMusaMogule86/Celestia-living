@@ -17,9 +17,11 @@ export async function POST(request: NextRequest) {
         const session = await requireAuth();
         const body = await request.json();
         const payload = createTransactionSchema.parse(body);
+        console.log("[API] POST /api/transactions payload:", payload);
         const transaction = await transactionsService.create(payload, {
             teamId: session.teamId,
         });
+        console.log("[API] POST /api/transactions created:", transaction);
         return successResponse(transaction, 201);
     });
 }
