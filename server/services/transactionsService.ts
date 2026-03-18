@@ -1,8 +1,7 @@
 import { Transaction, TransactionType, TransactionStatus } from "@/lib/types";
 import { prisma } from "@/server/db/prisma";
+import { mockStorage } from "@/lib/db/mock-storage";
 
-// Empty data - starting fresh
-const mockTransactions: Transaction[] = [];
 let prismaEnabled = true;
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -124,7 +123,7 @@ export const transactionsService = {
     async getAll(teamId?: string): Promise<Transaction[]> {
         if (!prismaEnabled) {
             await delay(100);
-            return [...mockTransactions];
+            return mockStorage.getCollection("transactions");
         }
 
         try {
@@ -140,14 +139,15 @@ export const transactionsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            return [...mockTransactions];
+            return mockStorage.getCollection("transactions");
         }
     },
 
     async getById(id: string, teamId?: string): Promise<Transaction | null> {
         if (!prismaEnabled) {
             await delay(50);
-            return mockTransactions.find(t => t.id === id) || null;
+            const transactions = mockStorage.getCollection("transactions");
+            return transactions.find((t: Transaction) => t.id === id) || null;
         }
 
         try {
@@ -165,39 +165,45 @@ export const transactionsService = {
         } catch {
             prismaEnabled = false;
             await delay(50);
-            return mockTransactions.find(t => t.id === id) || null;
+            const transactions = mockStorage.getCollection("transactions");
+            return transactions.find((t: Transaction) => t.id === id) || null;
         }
     },
 
     async getByType(type: TransactionType): Promise<Transaction[]> {
         await delay(100);
-        return mockTransactions.filter(t => t.type === type);
+        const transactions = mockStorage.getCollection("transactions");
+        return transactions.filter((t: Transaction) => t.type === type);
     },
 
     async getByStatus(status: TransactionStatus): Promise<Transaction[]> {
         await delay(100);
-        return mockTransactions.filter(t => t.status === status);
+        const transactions = mockStorage.getCollection("transactions");
+        return transactions.filter((t: Transaction) => t.status === status);
     },
 
     async getByDeal(dealId: string): Promise<Transaction[]> {
         await delay(100);
-        return mockTransactions.filter(t => t.deal.id === dealId);
+        const transactions = mockStorage.getCollection("transactions");
+        return transactions.filter((t: Transaction) => t.deal.id === dealId);
     },
 
     async getByClient(clientId: string): Promise<Transaction[]> {
         await delay(100);
-        return mockTransactions.filter(t => t.client.id === clientId);
+        const transactions = mockStorage.getCollection("transactions");
+        return transactions.filter((t: Transaction) => t.client.id === clientId);
     },
 
     async create(transaction: Omit<Transaction, "id" | "createdAt">, options?: { teamId?: string }): Promise<Transaction> {
         if (!prismaEnabled) {
             await delay(100);
+            const transactions = mockStorage.getCollection("transactions");
             const newTransaction: Transaction = {
                 ...transaction,
-                id: `txn-${String(mockTransactions.length + 1).padStart(3, "0")}`,
+                id: `txn-${String(transactions.length + 1).padStart(3, "0")}`,
                 createdAt: new Date().toISOString(),
             };
-            mockTransactions.push(newTransaction);
+            mockStorage.addToCollection("transactions", newTransaction);
             return newTransaction;
         }
 
@@ -231,12 +237,13 @@ export const transactionsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
+            const transactions = mockStorage.getCollection("transactions");
             const newTransaction: Transaction = {
                 ...transaction,
-                id: `txn-${String(mockTransactions.length + 1).padStart(3, "0")}`,
+                id: `txn-${String(transactions.length + 1).padStart(3, "0")}`,
                 createdAt: new Date().toISOString(),
             };
-            mockTransactions.push(newTransaction);
+            mockStorage.addToCollection("transactions", newTransaction);
             return newTransaction;
         }
     },
@@ -244,14 +251,15 @@ export const transactionsService = {
     async update(id: string, updates: Partial<Transaction>, teamId?: string): Promise<Transaction | null> {
         if (!prismaEnabled) {
             await delay(100);
-            const index = mockTransactions.findIndex(t => t.id === id);
-            if (index === -1) return null;
+            const transaction = await this.getById(id, teamId);
+            if (!transaction) return null;
 
-            mockTransactions[index] = {
-                ...mockTransactions[index],
+            const updatedTransaction = {
+                ...transaction,
                 ...updates,
             };
-            return mockTransactions[index];
+            mockStorage.updateInCollection("transactions", id, updatedTransaction);
+            return updatedTransaction;
         }
 
         try {
@@ -295,14 +303,15 @@ export const transactionsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const index = mockTransactions.findIndex(t => t.id === id);
-            if (index === -1) return null;
+            const transaction = await this.getById(id, teamId);
+            if (!transaction) return null;
 
-            mockTransactions[index] = {
-                ...mockTransactions[index],
+            const updatedTransaction = {
+                ...transaction,
                 ...updates,
             };
-            return mockTransactions[index];
+            mockStorage.updateInCollection("transactions", id, updatedTransaction);
+            return updatedTransaction;
         }
     },
 
@@ -320,10 +329,9 @@ export const transactionsService = {
     async delete(id: string, teamId?: string): Promise<boolean> {
         if (!prismaEnabled) {
             await delay(100);
-            const index = mockTransactions.findIndex(t => t.id === id);
-            if (index === -1) return false;
-
-            mockTransactions.splice(index, 1);
+            const transaction = await this.getById(id, teamId);
+            if (!transaction) return false;
+            mockStorage.removeFromCollection("transactions", id);
             return true;
         }
 
@@ -338,10 +346,9 @@ export const transactionsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const index = mockTransactions.findIndex(t => t.id === id);
-            if (index === -1) return false;
-
-            mockTransactions.splice(index, 1);
+            const transaction = await this.getById(id, teamId);
+            if (!transaction) return false;
+            mockStorage.removeFromCollection("transactions", id);
             return true;
         }
     },

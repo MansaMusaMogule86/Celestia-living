@@ -108,14 +108,16 @@ export default function NewClientPage() {
             });
 
             const json = await res.json();
+            console.log("[Client] create response", { status: res.status, body: json });
             if (!res.ok || !json.success) {
                 setSubmitError(json?.error || "Failed to create client");
                 return;
             }
 
-            router.push("/dashboard/clients");
-            router.refresh();
-        } catch {
+            // Navigate back to the list and ensure the server data is refetched
+            await router.push("/dashboard/clients");
+        } catch (error) {
+            console.error("Failed to create client", error);
             setSubmitError("Failed to create client");
         } finally {
             setIsSubmitting(false);

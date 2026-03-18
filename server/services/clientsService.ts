@@ -1,8 +1,7 @@
 import { Client, ClientType } from "@/lib/types";
 import { prisma } from "@/server/db/prisma";
+import { mockStorage } from "@/lib/db/mock-storage";
 
-// Empty data - starting fresh
-const mockClients: Client[] = [];
 let prismaEnabled = true;
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -80,7 +79,7 @@ export const clientsService = {
     async getAll(teamId?: string): Promise<Client[]> {
         if (!prismaEnabled) {
             await delay(100);
-            return [...mockClients];
+            return mockStorage.getCollection("clients");
         }
 
         try {
@@ -97,14 +96,15 @@ export const clientsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            return [...mockClients];
+            return mockStorage.getCollection("clients");
         }
     },
 
     async getById(id: string, teamId?: string): Promise<Client | null> {
         if (!prismaEnabled) {
             await delay(50);
-            return mockClients.find(c => c.id === id) || null;
+            const clients = mockStorage.getCollection("clients");
+            return clients.find((c: Client) => c.id === id) || null;
         }
 
         try {
@@ -123,18 +123,21 @@ export const clientsService = {
         } catch {
             prismaEnabled = false;
             await delay(50);
-            return mockClients.find(c => c.id === id) || null;
+            const clients = mockStorage.getCollection("clients");
+            return clients.find((c: Client) => c.id === id) || null;
         }
     },
 
     async getByType(type: ClientType): Promise<Client[]> {
         await delay(100);
-        return mockClients.filter(c => c.type.includes(type));
+        const clients = mockStorage.getCollection("clients");
+        return clients.filter((c: Client) => c.type.includes(type));
     },
 
     async getByNationality(nationality: string): Promise<Client[]> {
         await delay(100);
-        return mockClients.filter(c =>
+        const clients = mockStorage.getCollection("clients");
+        return clients.filter((c: Client) =>
             c.nationality.toLowerCase() === nationality.toLowerCase()
         );
     },
@@ -142,13 +145,14 @@ export const clientsService = {
     async create(client: Omit<Client, "id" | "createdAt" | "updatedAt">, options?: { teamId?: string }): Promise<Client> {
         if (!prismaEnabled) {
             await delay(100);
+            const clients = mockStorage.getCollection("clients");
             const newClient: Client = {
                 ...client,
-                id: `client-${String(mockClients.length + 1).padStart(3, "0")}`,
+                id: `client-${String(clients.length + 1).padStart(3, "0")}`,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             };
-            mockClients.push(newClient);
+            mockStorage.addToCollection("clients", newClient);
             return newClient;
         }
 
@@ -183,13 +187,14 @@ export const clientsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
+            const clients = mockStorage.getCollection("clients");
             const newClient: Client = {
                 ...client,
-                id: `client-${String(mockClients.length + 1).padStart(3, "0")}`,
+                id: `client-${String(clients.length + 1).padStart(3, "0")}`,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             };
-            mockClients.push(newClient);
+            mockStorage.addToCollection("clients", newClient);
             return newClient;
         }
     },
@@ -197,15 +202,16 @@ export const clientsService = {
     async update(id: string, updates: Partial<Client>, teamId?: string): Promise<Client | null> {
         if (!prismaEnabled) {
             await delay(100);
-            const index = mockClients.findIndex(c => c.id === id);
-            if (index === -1) return null;
+            const client = await this.getById(id, teamId);
+            if (!client) return null;
 
-            mockClients[index] = {
-                ...mockClients[index],
+            const updatedClient = {
+                ...client,
                 ...updates,
                 updatedAt: new Date().toISOString(),
             };
-            return mockClients[index];
+            mockStorage.updateInCollection("clients", id, updatedClient);
+            return updatedClient;
         }
 
         try {
@@ -242,15 +248,16 @@ export const clientsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const index = mockClients.findIndex(c => c.id === id);
-            if (index === -1) return null;
+            const client = await this.getById(id, teamId);
+            if (!client) return null;
 
-            mockClients[index] = {
-                ...mockClients[index],
+            const updatedClient = {
+                ...client,
                 ...updates,
                 updatedAt: new Date().toISOString(),
             };
-            return mockClients[index];
+            mockStorage.updateInCollection("clients", id, updatedClient);
+            return updatedClient;
         }
     },
 
@@ -258,33 +265,31 @@ export const clientsService = {
         clientId: string,
         document: { type: string; name: string; url: string }
     ): Promise<Client | null> {
-        const client = mockClients.find(c => c.id === clientId);
+        const client = await this.getById(clientId);
         if (!client) return null;
 
         const newDoc = {
             id: `doc-${Date.now()}`,
             ...document,
         };
-        client.documents.push(newDoc);
-        client.updatedAt = new Date().toISOString();
-        return client;
+        const updatedDocs = [...client.documents, newDoc];
+        return this.update(clientId, { documents: updatedDocs });
     },
 
     async removeDocument(clientId: string, documentId: string): Promise<Client | null> {
-        const client = mockClients.find(c => c.id === clientId);
+        const client = await this.getById(clientId);
         if (!client) return null;
 
-        client.documents = client.documents.filter(d => d.id !== documentId);
-        client.updatedAt = new Date().toISOString();
-        return client;
+        const updatedDocs = client.documents.filter(d => d.id !== documentId);
+        return this.update(clientId, { documents: updatedDocs });
     },
 
     async delete(id: string, teamId?: string): Promise<boolean> {
         if (!prismaEnabled) {
             await delay(100);
-            const index = mockClients.findIndex(c => c.id === id);
-            if (index === -1) return false;
-            mockClients.splice(index, 1);
+            const client = await this.getById(id, teamId);
+            if (!client) return false;
+            mockStorage.removeFromCollection("clients", id);
             return true;
         }
 
@@ -299,9 +304,9 @@ export const clientsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const index = mockClients.findIndex(c => c.id === id);
-            if (index === -1) return false;
-            mockClients.splice(index, 1);
+            const client = await this.getById(id, teamId);
+            if (!client) return false;
+            mockStorage.removeFromCollection("clients", id);
             return true;
         }
     },
@@ -309,7 +314,8 @@ export const clientsService = {
     async search(query: string): Promise<Client[]> {
         await delay(100);
         const lowerQuery = query.toLowerCase();
-        return mockClients.filter(c =>
+        const clients = mockStorage.getCollection("clients");
+        return clients.filter((c: Client) =>
             c.name.toLowerCase().includes(lowerQuery) ||
             c.email.toLowerCase().includes(lowerQuery) ||
             c.phone.includes(query)

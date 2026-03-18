@@ -17,9 +17,11 @@ export async function POST(request: NextRequest) {
         const session = await requireAuth();
         const body = await request.json();
         const payload = createClientSchema.parse(body);
+        console.log("[API] POST /api/clients payload:", payload);
         const client = await clientsService.create(payload, {
             teamId: session.teamId,
         });
+        console.log("[API] POST /api/clients created:", client);
         return successResponse(client, 201);
     });
 }

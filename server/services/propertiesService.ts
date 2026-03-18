@@ -1,8 +1,7 @@
 import { Property, PropertyType, PropertyStatus, ListingType } from "@/lib/types";
 import { prisma } from "@/server/db/prisma";
+import { mockStorage } from "@/lib/db/mock-storage";
 
-// Empty data - starting fresh
-const mockProperties: Property[] = [];
 let prismaEnabled = true;
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -164,7 +163,7 @@ export const propertiesService = {
     async getAll(teamId?: string): Promise<Property[]> {
         if (!prismaEnabled) {
             await delay(100);
-            return [...mockProperties];
+            return mockStorage.getCollection("properties");
         }
 
         try {
@@ -179,14 +178,15 @@ export const propertiesService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            return [...mockProperties];
+            return mockStorage.getCollection("properties");
         }
     },
 
     async getById(id: string, teamId?: string): Promise<Property | null> {
         if (!prismaEnabled) {
             await delay(50);
-            return mockProperties.find(p => p.id === id) || null;
+            const properties = mockStorage.getCollection("properties");
+            return properties.find((p: Property) => p.id === id) || null;
         }
 
         try {
@@ -201,35 +201,40 @@ export const propertiesService = {
         } catch {
             prismaEnabled = false;
             await delay(50);
-            return mockProperties.find(p => p.id === id) || null;
+            const properties = mockStorage.getCollection("properties");
+            return properties.find((p: Property) => p.id === id) || null;
         }
     },
 
     async getByStatus(status: PropertyStatus): Promise<Property[]> {
         await delay(100);
-        return mockProperties.filter(p => p.status === status);
+        const properties = mockStorage.getCollection("properties");
+        return properties.filter((p: Property) => p.status === status);
     },
 
     async getByType(type: PropertyType): Promise<Property[]> {
         await delay(100);
-        return mockProperties.filter(p => p.type === type);
+        const properties = mockStorage.getCollection("properties");
+        return properties.filter((p: Property) => p.type === type);
     },
 
     async getByListingType(listingType: ListingType): Promise<Property[]> {
         await delay(100);
-        return mockProperties.filter(p => p.listingType === listingType);
+        const properties = mockStorage.getCollection("properties");
+        return properties.filter((p: Property) => p.listingType === listingType);
     },
 
     async create(data: Omit<Property, "id" | "createdAt" | "updatedAt">, _userId?: string, teamId?: string): Promise<Property> {
         if (!prismaEnabled) {
             await delay(100);
+            const properties = mockStorage.getCollection("properties");
             const newProperty: Property = {
                 ...data,
-                id: `prop-${String(mockProperties.length + 1).padStart(3, "0")}`,
+                id: `prop-${String(properties.length + 1).padStart(3, "0")}`,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             };
-            mockProperties.push(newProperty);
+            mockStorage.addToCollection("properties", newProperty);
             return newProperty;
         }
 
@@ -261,13 +266,14 @@ export const propertiesService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
+            const properties = mockStorage.getCollection("properties");
             const newProperty: Property = {
                 ...data,
-                id: `prop-${String(mockProperties.length + 1).padStart(3, "0")}`,
+                id: `prop-${String(properties.length + 1).padStart(3, "0")}`,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             };
-            mockProperties.push(newProperty);
+            mockStorage.addToCollection("properties", newProperty);
             return newProperty;
         }
     },
@@ -275,15 +281,16 @@ export const propertiesService = {
     async update(id: string, updates: Partial<Property>, _userId?: string, teamId?: string): Promise<Property | null> {
         if (!prismaEnabled) {
             await delay(100);
-            const index = mockProperties.findIndex(p => p.id === id);
-            if (index === -1) return null;
+            const property = await this.getById(id, teamId);
+            if (!property) return null;
 
-            mockProperties[index] = {
-                ...mockProperties[index],
+            const updatedProperty = {
+                ...property,
                 ...updates,
                 updatedAt: new Date().toISOString(),
             };
-            return mockProperties[index];
+            mockStorage.updateInCollection("properties", id, updatedProperty);
+            return updatedProperty;
         }
 
         try {
@@ -329,25 +336,25 @@ export const propertiesService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const index = mockProperties.findIndex(p => p.id === id);
-            if (index === -1) return null;
+            const property = await this.getById(id, teamId);
+            if (!property) return null;
 
-            mockProperties[index] = {
-                ...mockProperties[index],
+            const updatedProperty = {
+                ...property,
                 ...updates,
                 updatedAt: new Date().toISOString(),
             };
-            return mockProperties[index];
+            mockStorage.updateInCollection("properties", id, updatedProperty);
+            return updatedProperty;
         }
     },
 
     async delete(id: string, teamId?: string): Promise<boolean> {
         if (!prismaEnabled) {
             await delay(100);
-            const index = mockProperties.findIndex(p => p.id === id);
-            if (index === -1) return false;
-
-            mockProperties.splice(index, 1);
+            const property = await this.getById(id, teamId);
+            if (!property) return false;
+            mockStorage.removeFromCollection("properties", id);
             return true;
         }
 
@@ -366,10 +373,9 @@ export const propertiesService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const index = mockProperties.findIndex(p => p.id === id);
-            if (index === -1) return false;
-
-            mockProperties.splice(index, 1);
+            const property = await this.getById(id, teamId);
+            if (!property) return false;
+            mockStorage.removeFromCollection("properties", id);
             return true;
         }
     },
@@ -377,7 +383,8 @@ export const propertiesService = {
     async search(query: string): Promise<Property[]> {
         await delay(100);
         const lowerQuery = query.toLowerCase();
-        return mockProperties.filter(p =>
+        const properties = mockStorage.getCollection("properties");
+        return properties.filter((p: Property) =>
             p.title.toLowerCase().includes(lowerQuery) ||
             p.location.area.toLowerCase().includes(lowerQuery) ||
             p.location.community.toLowerCase().includes(lowerQuery)

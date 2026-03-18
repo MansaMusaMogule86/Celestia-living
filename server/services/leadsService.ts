@@ -1,8 +1,7 @@
 import { Lead, LeadStatus, LeadSource, LeadPriority } from "@/lib/types";
 import { prisma, PortalName as PrismaPortalName } from "@/server/db/prisma";
+import { mockStorage } from "@/lib/db/mock-storage";
 
-// Empty data - starting fresh
-const mockLeads: Lead[] = [];
 let prismaEnabled = true;
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -164,7 +163,7 @@ export const leadsService = {
     async getAll(teamId?: string): Promise<Lead[]> {
         if (!prismaEnabled) {
             await delay(100);
-            return [...mockLeads];
+            return mockStorage.getCollection("leads");
         }
 
         try {
@@ -181,14 +180,15 @@ export const leadsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            return [...mockLeads];
+            return mockStorage.getCollection("leads");
         }
     },
 
     async getById(id: string, teamId?: string): Promise<Lead | null> {
         if (!prismaEnabled) {
             await delay(50);
-            return mockLeads.find(l => l.id === id) || null;
+            const leads = mockStorage.getCollection("leads");
+            return leads.find((l: Lead) => l.id === id) || null;
         }
 
         try {
@@ -208,45 +208,148 @@ export const leadsService = {
         } catch {
             prismaEnabled = false;
             await delay(50);
-            return mockLeads.find(l => l.id === id) || null;
+            const leads = mockStorage.getCollection("leads");
+            return leads.find((l: Lead) => l.id === id) || null;
         }
     },
 
     async getByStatus(status: LeadStatus): Promise<Lead[]> {
-        await delay(100);
-        return mockLeads.filter(l => l.status === status);
+        if (!prismaEnabled) {
+            await delay(100);
+            const leads = mockStorage.getCollection("leads");
+            return leads.filter((l: Lead) => l.status === status);
+        }
+
+        try {
+            const rows = await prisma.lead.findMany({
+                where: { status: mapStatusToPrisma(status) },
+                include: {
+                    assignedTo: {
+                        select: { id: true, firstName: true, lastName: true },
+                    },
+                },
+            });
+            return rows.map(toAppLead);
+        } catch {
+            prismaEnabled = false;
+            await delay(100);
+            const leads = mockStorage.getCollection("leads");
+            return leads.filter((l: Lead) => l.status === status);
+        }
     },
 
     async getBySource(source: LeadSource): Promise<Lead[]> {
-        await delay(100);
-        return mockLeads.filter(l => l.source === source);
+        if (!prismaEnabled) {
+            await delay(100);
+            const leads = mockStorage.getCollection("leads");
+            return leads.filter((l: Lead) => l.source === source);
+        }
+
+        try {
+            const prismaSource = mapSourceToPrisma(source);
+            const rows = await prisma.lead.findMany({
+                where: { source: prismaSource },
+                include: {
+                    assignedTo: {
+                        select: { id: true, firstName: true, lastName: true },
+                    },
+                },
+            });
+            return rows.map(toAppLead);
+        } catch {
+            prismaEnabled = false;
+            await delay(100);
+            const leads = mockStorage.getCollection("leads");
+            return leads.filter((l: Lead) => l.source === source);
+        }
     },
 
     async getByPriority(priority: LeadPriority): Promise<Lead[]> {
-        await delay(100);
-        return mockLeads.filter(l => l.priority === priority);
+        if (!prismaEnabled) {
+            await delay(100);
+            const leads = mockStorage.getCollection("leads");
+            return leads.filter((l: Lead) => l.priority === priority);
+        }
+
+        try {
+            const rows = await prisma.lead.findMany({
+                where: { message: { contains: `"priority":"${priority}"` } }, // Assuming priority is stored in message JSON
+                include: {
+                    assignedTo: {
+                        select: { id: true, firstName: true, lastName: true },
+                    },
+                },
+            });
+            return rows.map(toAppLead).filter(l => l.priority === priority); // Filter again to be safe if JSON search is not exact
+        } catch {
+            prismaEnabled = false;
+            await delay(100);
+            const leads = mockStorage.getCollection("leads");
+            return leads.filter((l: Lead) => l.priority === priority);
+        }
     },
 
     async getUnassigned(): Promise<Lead[]> {
-        await delay(100);
-        return mockLeads.filter(l => !l.assignedTo);
+        if (!prismaEnabled) {
+            await delay(100);
+            const leads = mockStorage.getCollection("leads");
+            return leads.filter((l: Lead) => !l.assignedTo);
+        }
+
+        try {
+            const rows = await prisma.lead.findMany({
+                where: { assignedToId: null },
+                include: {
+                    assignedTo: {
+                        select: { id: true, firstName: true, lastName: true },
+                    },
+                },
+            });
+            return rows.map(toAppLead);
+        } catch {
+            prismaEnabled = false;
+            await delay(100);
+            const leads = mockStorage.getCollection("leads");
+            return leads.filter((l: Lead) => !l.assignedTo);
+        }
     },
 
     async getByAgent(agentId: string): Promise<Lead[]> {
-        await delay(100);
-        return mockLeads.filter(l => l.assignedTo?.id === agentId);
+        if (!prismaEnabled) {
+            await delay(100);
+            const leads = mockStorage.getCollection("leads");
+            return leads.filter((l: Lead) => l.assignedTo?.id === agentId);
+        }
+
+        try {
+            const rows = await prisma.lead.findMany({
+                where: { assignedToId: agentId },
+                include: {
+                    assignedTo: {
+                        select: { id: true, firstName: true, lastName: true },
+                    },
+                },
+            });
+            return rows.map(toAppLead);
+        } catch {
+            prismaEnabled = false;
+            await delay(100);
+            const leads = mockStorage.getCollection("leads");
+            return leads.filter((l: Lead) => l.assignedTo?.id === agentId);
+        }
     },
 
     async create(lead: Omit<Lead, "id" | "createdAt" | "updatedAt">, options?: { teamId?: string; userId?: string }): Promise<Lead> {
         if (!prismaEnabled) {
             await delay(100);
+            const leads = mockStorage.getCollection("leads");
             const newLead: Lead = {
                 ...lead,
-                id: `lead-${String(mockLeads.length + 1).padStart(3, "0")}`,
+                id: `lead-${String(leads.length + 1).padStart(3, "0")}`,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             };
-            mockLeads.push(newLead);
+            mockStorage.addToCollection("leads", newLead);
             return newLead;
         }
 
@@ -292,13 +395,14 @@ export const leadsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
+            const leads = mockStorage.getCollection("leads");
             const newLead: Lead = {
                 ...lead,
-                id: `lead-${String(mockLeads.length + 1).padStart(3, "0")}`,
+                id: `lead-${String(leads.length + 1).padStart(3, "0")}`,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             };
-            mockLeads.push(newLead);
+            mockStorage.addToCollection("leads", newLead);
             return newLead;
         }
     },
@@ -306,15 +410,16 @@ export const leadsService = {
     async update(id: string, updates: Partial<Lead>, teamId?: string): Promise<Lead | null> {
         if (!prismaEnabled) {
             await delay(100);
-            const index = mockLeads.findIndex(l => l.id === id);
-            if (index === -1) return null;
+            const lead = await this.getById(id, teamId);
+            if (!lead) return null;
 
-            mockLeads[index] = {
-                ...mockLeads[index],
+            const updatedLead = {
+                ...lead,
                 ...updates,
                 updatedAt: new Date().toISOString(),
             };
-            return mockLeads[index];
+            mockStorage.updateInCollection("leads", id, updatedLead);
+            return updatedLead;
         }
 
         try {
@@ -370,15 +475,16 @@ export const leadsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const index = mockLeads.findIndex(l => l.id === id);
-            if (index === -1) return null;
+            const lead = await this.getById(id, teamId);
+            if (!lead) return null;
 
-            mockLeads[index] = {
-                ...mockLeads[index],
+            const updatedLead = {
+                ...lead,
                 ...updates,
                 updatedAt: new Date().toISOString(),
             };
-            return mockLeads[index];
+            mockStorage.updateInCollection("leads", id, updatedLead);
+            return updatedLead;
         }
     },
 
@@ -393,9 +499,9 @@ export const leadsService = {
     async delete(id: string, teamId?: string): Promise<boolean> {
         if (!prismaEnabled) {
             await delay(100);
-            const index = mockLeads.findIndex(l => l.id === id);
-            if (index === -1) return false;
-            mockLeads.splice(index, 1);
+            const lead = await this.getById(id, teamId);
+            if (!lead) return false;
+            mockStorage.removeFromCollection("leads", id);
             return true;
         }
 
@@ -410,9 +516,9 @@ export const leadsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const index = mockLeads.findIndex(l => l.id === id);
-            if (index === -1) return false;
-            mockLeads.splice(index, 1);
+            const lead = await this.getById(id, teamId);
+            if (!lead) return false;
+            mockStorage.removeFromCollection("leads", id);
             return true;
         }
     },
@@ -420,7 +526,8 @@ export const leadsService = {
     async search(query: string): Promise<Lead[]> {
         await delay(100);
         const lowerQuery = query.toLowerCase();
-        return mockLeads.filter(l =>
+        const leads = mockStorage.getCollection("leads");
+        return leads.filter((l: Lead) =>
             l.name.toLowerCase().includes(lowerQuery) ||
             l.email.toLowerCase().includes(lowerQuery) ||
             l.phone.includes(query)
