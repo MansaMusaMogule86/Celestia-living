@@ -92,7 +92,6 @@ export default function DealDetailPage() {
 
     const dealStageOrder: DealStage[] = ["inquiry", "viewing", "offer", "negotiation", "agreement", "closed"];
 
-    const handleEditDeal = async () => {
     const handleAdvanceStage = async () => {
         if (!deal) {
             return;
