@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { Route } from "next";
+import { getSession } from "@/lib/auth/session";
 import { transactionsService } from "@/server/services/transactionsService";
 import { dealsService } from "@/server/services/dealsService";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -27,8 +28,11 @@ interface PageProps {
 }
 
 export default async function TransactionDetailPage({ params }: PageProps) {
+  const session = await getSession();
+  const teamId = session?.teamId;
+
   const { id } = await params;
-  const transaction = await transactionsService.getById(id);
+  const transaction = await transactionsService.getById(id, teamId);
 
   if (!transaction) {
     notFound();
@@ -69,6 +73,12 @@ export default async function TransactionDetailPage({ params }: PageProps) {
         </div>
 
         <div className="flex gap-2">
+            <Link href={`/dashboard/transactions/${id}/edit`}>
+              <Button variant="outline" className="gap-2">
+                <Edit className="h-4 w-4" />
+                Edit
+              </Button>
+            </Link>
           <form action={handleDelete}>
             <Button variant="destructive" className="gap-2">
               <Trash2 className="h-4 w-4" />

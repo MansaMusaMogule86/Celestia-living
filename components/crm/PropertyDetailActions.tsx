@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface PropertyDetailActionsProps {
     id: string;
@@ -14,35 +15,6 @@ interface PropertyDetailActionsProps {
 export function PropertyDetailActions({ id, title }: PropertyDetailActionsProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-
-    const handleEdit = async () => {
-        const nextTitle = window.prompt("Update property title", title)?.trim();
-        if (!nextTitle || nextTitle === title) {
-            return;
-        }
-
-        setLoading(true);
-        try {
-            const res = await fetch(`/api/properties/${id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title: nextTitle }),
-            });
-            const json = await res.json();
-
-            if (!res.ok || !json.success) {
-                toast.error(json.message || "Failed to update property");
-                return;
-            }
-
-            toast.success("Property updated");
-            router.refresh();
-        } catch {
-            toast.error("Failed to update property");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleDelete = async () => {
         const confirmed = window.confirm("Delete this property? This action cannot be undone.");
@@ -75,10 +47,12 @@ export function PropertyDetailActions({ id, title }: PropertyDetailActionsProps)
 
     return (
         <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleEdit} disabled={loading}>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-            </Button>
+                <Link href={`/dashboard/properties/${id}/edit`}>
+                    <Button variant="outline" disabled={loading}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                    </Button>
+                </Link>
             <Button
                 variant="outline"
                 className="text-destructive hover:text-destructive"

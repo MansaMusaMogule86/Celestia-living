@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Lead, LeadStatus, LeadPriority, LeadSource } from "@/lib/types";
 import { toast } from "sonner";
+import Link from "next/link";
 
 const statusConfig: Record<LeadStatus, { label: string; color: string; bgColor: string }> = {
     new: { label: "New", color: "text-blue-700", bgColor: "bg-blue-100" },
@@ -79,39 +80,6 @@ export default function LeadDetailPage() {
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [newNote, setNewNote] = useState("");
-
-    const handleEditLead = async () => {
-        if (!lead) {
-            return;
-        }
-
-        const nextName = window.prompt("Update lead name", lead.name)?.trim();
-        if (!nextName || nextName === lead.name) {
-            return;
-        }
-
-        setActionLoading(true);
-        try {
-            const res = await fetch(`/api/leads/${lead.id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: nextName }),
-            });
-            const json = await res.json();
-
-            if (!res.ok || !json.success) {
-                toast.error(json.message || "Failed to update lead");
-                return;
-            }
-
-            setLead(json.data as Lead);
-            toast.success("Lead updated");
-        } catch {
-            toast.error("Failed to update lead");
-        } finally {
-            setActionLoading(false);
-        }
-    };
 
     const handleConvertToClient = async () => {
         if (!lead || lead.status === "converted") {
@@ -265,9 +233,11 @@ export default function LeadDetailPage() {
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline" onClick={handleEditLead} disabled={actionLoading}>
-                        Edit Lead
-                    </Button>
+                    <Link href={`/dashboard/leads/${lead.id}/edit`}>
+                        <Button variant="outline" disabled={actionLoading}>
+                            Edit Lead
+                        </Button>
+                    </Link>
                     <Button onClick={handleConvertToClient} disabled={actionLoading || lead.status === "converted"}>
                         Convert to Client
                     </Button>

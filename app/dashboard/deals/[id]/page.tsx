@@ -93,38 +93,6 @@ export default function DealDetailPage() {
     const dealStageOrder: DealStage[] = ["inquiry", "viewing", "offer", "negotiation", "agreement", "closed"];
 
     const handleEditDeal = async () => {
-        if (!deal) {
-            return;
-        }
-
-        const nextTitle = window.prompt("Update deal title", deal.title)?.trim();
-        if (!nextTitle || nextTitle === deal.title) {
-            return;
-        }
-
-        setActionLoading(true);
-        try {
-            const res = await fetch(`/api/deals/${deal.id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title: nextTitle }),
-            });
-            const json = await res.json();
-
-            if (!res.ok || !json.success) {
-                toast.error(json.message || "Failed to update deal");
-                return;
-            }
-
-            setDeal(json.data as Deal);
-            toast.success("Deal updated");
-        } catch {
-            toast.error("Failed to update deal");
-        } finally {
-            setActionLoading(false);
-        }
-    };
-
     const handleAdvanceStage = async () => {
         if (!deal) {
             return;
@@ -274,9 +242,9 @@ export default function DealDetailPage() {
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline" onClick={handleEditDeal} disabled={actionLoading}>
-                        Edit Deal
-                    </Button>
+                    <Link href={`/dashboard/deals/${deal.id}/edit`}>
+                        <Button variant="outline">Edit Deal</Button>
+                    </Link>
                     <Button onClick={handleAdvanceStage} disabled={actionLoading}>
                         Advance Stage
                     </Button>
