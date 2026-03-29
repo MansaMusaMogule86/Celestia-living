@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
+import { getSession } from "@/lib/auth/session";
 import { dealsService } from "@/server/services/dealsService";
 import { leadsService } from "@/server/services/leadsService";
 import { transactionsService } from "@/server/services/transactionsService";
@@ -68,13 +69,16 @@ const stageColors: Record<DealStage, string> = {
 };
 
 export default async function ReportsPage() {
+    const session = await getSession();
+    const teamId = session?.teamId;
+
     const [deals, leads, transactions, clientStats, transactionStats] =
         await Promise.all([
-            dealsService.getAll(),
-            leadsService.getAll(),
-            transactionsService.getAll(),
-            clientsService.getStats(),
-            transactionsService.getStats(),
+            dealsService.getAll(teamId),
+            leadsService.getAll(teamId),
+            transactionsService.getAll(teamId),
+            clientsService.getStats(teamId),
+            transactionsService.getStats(teamId),
         ]);
 
     const metrics = calculatePipelineMetrics(deals);

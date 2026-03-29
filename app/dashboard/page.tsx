@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
+import { getSession } from "@/lib/auth/session";
 import { propertiesService } from "@/server/services/propertiesService";
 import { leadsService } from "@/server/services/leadsService";
 import { dealsService } from "@/server/services/dealsService";
@@ -106,6 +107,9 @@ const STAGE_COLORS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export default async function DashboardPage() {
+  const session = await getSession();
+  const teamId = session?.teamId;
+
   // -- Fetch all data in parallel --
   const [
     propertyStats,
@@ -118,15 +122,15 @@ export default async function DashboardPage() {
     allClients,
     allProperties,
   ] = await Promise.all([
-    propertiesService.getStats("default"),
-    leadsService.getStats(),
-    dealsService.getStats(),
-    transactionsService.getStats(),
-    leadsService.getAll(),
-    dealsService.getAll(),
-    transactionsService.getAll(),
-    clientsService.getAll(),
-    propertiesService.getAll(),
+    propertiesService.getStats(teamId),
+    leadsService.getStats(teamId),
+    dealsService.getStats(teamId),
+    transactionsService.getStats(teamId),
+    leadsService.getAll(teamId),
+    dealsService.getAll(teamId),
+    transactionsService.getAll(teamId),
+    clientsService.getAll(teamId),
+    propertiesService.getAll(teamId),
   ]);
 
   // -- Derived metrics --

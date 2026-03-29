@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getSession } from "@/lib/auth/session";
 import { leadsService } from "@/server/services/leadsService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -76,8 +77,11 @@ function formatBudget(min: number, max: number, listingType: "sale" | "rent") {
 }
 
 export default async function LeadsPage() {
-    const leads = await leadsService.getAll();
-    const stats = await leadsService.getStats();
+    const session = await getSession();
+    const teamId = session?.teamId;
+
+    const leads = await leadsService.getAll(teamId);
+    const stats = await leadsService.getStats(teamId);
 
     return (
         <div className="space-y-6">

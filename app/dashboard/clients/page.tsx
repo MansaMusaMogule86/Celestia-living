@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getSession } from "@/lib/auth/session";
 import { clientsService } from "@/server/services/clientsService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,8 +31,11 @@ function getTypeVariant(type: ClientType) {
 }
 
 export default async function ClientsPage() {
-    const clients = await clientsService.getAll();
-    const stats = await clientsService.getStats();
+    const session = await getSession();
+    const teamId = session?.teamId;
+
+    const clients = await clientsService.getAll(teamId);
+    const stats = await clientsService.getStats(teamId);
 
     return (
         <div className="space-y-6">

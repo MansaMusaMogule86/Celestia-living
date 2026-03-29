@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getSession } from "@/lib/auth/session";
 import { propertiesService } from "@/server/services/propertiesService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,8 +60,11 @@ function formatDate(dateString: string): string {
 }
 
 export default async function PropertyDetailPage({ params }: PropertyDetailPageProps) {
+    const session = await getSession();
+    const teamId = session?.teamId;
+
     const { id } = await params;
-    const property = await propertiesService.getById(id);
+    const property = await propertiesService.getById(id, teamId);
 
     if (!property) {
         notFound();

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getSession } from "@/lib/auth/session";
 import { clientsService } from "@/server/services/clientsService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,8 +43,11 @@ function formatDate(dateString: string): string {
 }
 
 export default async function ClientDetailPage({ params }: ClientDetailPageProps) {
+    const session = await getSession();
+    const teamId = session?.teamId;
+
     const { id } = await params;
-    const client = await clientsService.getById(id);
+    const client = await clientsService.getById(id, teamId);
 
     if (!client) {
         notFound();
