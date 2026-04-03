@@ -1,5 +1,36 @@
 {
-  "leads": [],
+  "leads": [
+    {
+      "name": "mehdi alaoui ismaili",
+      "email": "mehdi.alaouiismaili9@gmail.com",
+      "phone": "+971542310100",
+      "status": "contacted",
+      "source": "bayut",
+      "priority": "medium",
+      "budget": {
+        "min": 200000,
+        "max": 4000000
+      },
+      "requirements": {
+        "type": [
+          "apartment"
+        ],
+        "bedrooms": [],
+        "areas": [
+          "Dubai Marina"
+        ],
+        "listingType": "sale"
+      },
+      "notes": "",
+      "assignedTo": {
+        "id": "agent-ilan",
+        "name": "ilan"
+      },
+      "id": "lead-001",
+      "createdAt": "2026-04-03T03:26:21.140Z",
+      "updatedAt": "2026-04-03T03:26:21.140Z"
+    }
+  ],
   "clients": [],
   "transactions": [],
   "properties": [],
