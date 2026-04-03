@@ -26,7 +26,6 @@ import {
 } from "lucide-react";
 import { Lead, LeadStatus, LeadPriority, LeadSource } from "@/lib/types";
 import { toast } from "sonner";
-import Link from "next/link";
 
 const statusConfig: Record<LeadStatus, { label: string; color: string; bgColor: string }> = {
     new: { label: "New", color: "text-blue-700", bgColor: "bg-blue-100" },
