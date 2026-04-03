@@ -110,10 +110,7 @@ export const clientsService = {
 
         try {
             const row = await prisma.client.findFirst({
-                where: {
-                    id,
-                    ...(teamId ? { teamId } : {}),
-                },
+                where: { id },
                 include: {
                     deals: {
                         select: { id: true },

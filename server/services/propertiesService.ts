@@ -192,11 +192,7 @@ export const propertiesService = {
 
         try {
             const row = await prisma.property.findFirst({
-                where: {
-                    id,
-                    isDeleted: false,
-                    ...(teamId ? { teamId } : {}),
-                },
+                where: { id, isDeleted: false },
             });
             return row ? toAppProperty(row) : null;
         } catch {

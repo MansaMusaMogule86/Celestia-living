@@ -37,6 +37,7 @@ export function ClientDetailActions({ id, name }: ClientDetailActionsProps) {
             }
 
             toast.success("Client deleted");
+            router.refresh();
             router.push("/dashboard/clients");
         } catch {
             toast.error("Failed to delete client");

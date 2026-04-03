@@ -194,10 +194,7 @@ export const leadsService = {
 
         try {
             const row = await prisma.lead.findFirst({
-                where: {
-                    id,
-                    ...(teamId ? { teamId } : {}),
-                },
+                where: { id },
                 include: {
                     assignedTo: {
                         select: { id: true, firstName: true, lastName: true },
