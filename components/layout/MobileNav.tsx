@@ -50,7 +50,7 @@ export default function MobileNav() {
                     <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">
                         I
                     </div>
-                    <span>Ilan CRM</span>
+                    <span>Celestia Living</span>
                 </Link>
                 <Button variant="ghost" size="icon" onClick={() => setOpen(!open)}>
                     {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -81,7 +81,7 @@ export default function MobileNav() {
                         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">
                             I
                         </div>
-                        <span>Ilan CRM</span>
+                        <span>Celestia Living</span>
                     </Link>
                     <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
                         <X className="h-5 w-5" />

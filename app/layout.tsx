@@ -10,7 +10,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-    title: "Ilan CRM",
+    title: "Celestia Living",
     description: "Next-gen Real Estate CRM",
 };
 

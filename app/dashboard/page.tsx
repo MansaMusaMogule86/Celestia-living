@@ -722,7 +722,7 @@ export default async function DashboardPage() {
           <CardContent className="py-12">
             <div className="text-center max-w-md mx-auto">
               <h3 className="text-xl font-semibold mb-2">
-                Welcome to Ilan CRM!
+                Welcome to Celestia Living!
               </h3>
               <p className="text-muted-foreground mb-6">
                 Get started by adding your first property or lead. Your

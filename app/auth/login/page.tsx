@@ -52,7 +52,7 @@ export default function LoginPage() {
                             I
                         </div>
                     </div>
-                    <CardTitle className="text-2xl">Ilan CRM</CardTitle>
+                    <CardTitle className="text-2xl">Celestia Living</CardTitle>
                     <CardDescription>
                         Sign in to access your dashboard
                     </CardDescription>

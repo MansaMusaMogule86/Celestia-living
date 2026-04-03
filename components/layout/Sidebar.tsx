@@ -88,7 +88,7 @@ export default function Sidebar() {
                     <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">
                         I
                     </div>
-                    <span className="text-sidebar-foreground">Ilan CRM</span>
+                    <span className="text-sidebar-foreground">Celestia Living</span>
                 </Link>
             </div>
 
