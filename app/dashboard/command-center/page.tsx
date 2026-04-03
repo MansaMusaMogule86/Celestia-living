@@ -181,10 +181,9 @@ export default function CommandPage() {
                             <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">System Status</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <StatusRow label="Lead Scoring Engine" status="Online" color="bg-emerald-500" />
-                            <StatusRow label="Email Authenticity" status="Verified (99%)" color="bg-emerald-500" />
-                            <StatusRow label="SMS Gateway" status="Active" color="bg-emerald-500" />
-                            <StatusRow label="Knowledge Base" status="Syncing..." color="bg-amber-500" animate />
+                            <div className="text-center py-4 text-sm text-muted-foreground">
+                                No systems configured
+                            </div>
                         </CardContent>
                     </Card>
                 </motion.div>
