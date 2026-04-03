@@ -112,6 +112,7 @@ export default function EditClientPage() {
             }
 
             toast.success("Client updated successfully");
+            router.refresh();
             router.push(`/dashboard/clients/${id}`);
         } catch {
             setError("Failed to update client");
@@ -190,7 +191,7 @@ export default function EditClientPage() {
                         <div className="space-y-2">
                             <Label htmlFor="nationality">Nationality</Label>
                             <Select
-                                value={formData.nationality}
+                                value={formData.nationality || undefined}
                                 onValueChange={(v) => setFormData((p) => ({ ...p, nationality: v }))}
                             >
                                 <SelectTrigger>

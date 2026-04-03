@@ -134,6 +134,7 @@ export default function LeadDetailPage() {
             }
 
             toast.success("Lead deleted");
+            router.refresh();
             router.push("/dashboard/leads");
         } catch {
             toast.error("Failed to delete lead");

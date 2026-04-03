@@ -179,6 +179,7 @@ export default function EditLeadPage() {
             }
 
             toast.success("Lead updated successfully");
+            router.refresh();
             router.push(`/dashboard/leads/${id}`);
         } catch {
             setError("Failed to update lead");

@@ -129,6 +129,7 @@ export default function EditTransactionPage() {
             }
 
             toast.success("Transaction updated successfully");
+            router.refresh();
             router.push(`/dashboard/transactions/${id}`);
         } catch {
             setError("Failed to update transaction");

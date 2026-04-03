@@ -152,6 +152,7 @@ export default function DealDetailPage() {
             }
 
             toast.success("Deal deleted");
+            router.refresh();
             router.push("/dashboard/deals");
         } catch {
             toast.error("Failed to delete deal");

@@ -163,6 +163,7 @@ export default function EditPropertyPage() {
             }
 
             toast.success("Property updated successfully");
+            router.refresh();
             router.push(`/dashboard/properties/${id}`);
         } catch {
             setError("Failed to update property");

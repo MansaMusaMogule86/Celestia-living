@@ -132,8 +132,9 @@ export const dealsService = {
         }
 
         try {
+            const resolvedTeamId = teamId ? await resolveTeamId(teamId) : null;
             const rows = await prisma.deal.findMany({
-                where: teamId ? { teamId } : undefined,
+                where: resolvedTeamId ? { teamId: resolvedTeamId } : undefined,
                 orderBy: { createdAt: "desc" },
                 include: {
                     property: { select: { id: true, title: true } },

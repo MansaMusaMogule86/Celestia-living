@@ -115,6 +115,7 @@ export default function NewClientPage() {
             }
 
             // Navigate back to the list and ensure the server data is refetched
+            router.refresh();
             await router.push("/dashboard/clients");
         } catch (error) {
             console.error("Failed to create client", error);
@@ -194,7 +195,7 @@ export default function NewClientPage() {
                         <div className="space-y-2">
                             <Label htmlFor="nationality">Nationality</Label>
                             <Select
-                                value={formData.nationality}
+                                value={formData.nationality || undefined}
                                 onValueChange={(value) => handleSelectChange("nationality", value)}
                             >
                                 <SelectTrigger id="nationality">
@@ -232,7 +233,7 @@ export default function NewClientPage() {
                                     <Checkbox
                                         id={`type-${type.value}`}
                                         checked={selectedTypes.includes(type.value)}
-                                        onCheckedChange={() => toggleType(type.value)}
+                                        onCheckedChange={() => {}}
                                     />
                                     <Label
                                         htmlFor={`type-${type.value}`}

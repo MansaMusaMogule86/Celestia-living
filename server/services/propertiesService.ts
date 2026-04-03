@@ -167,10 +167,11 @@ export const propertiesService = {
         }
 
         try {
+            const resolvedTeamId = teamId ? await resolveTeamId(teamId) : null;
             const rows = await prisma.property.findMany({
                 where: {
                     isDeleted: false,
-                    ...(teamId ? { teamId } : {}),
+                    ...(resolvedTeamId ? { teamId: resolvedTeamId } : {}),
                 },
                 orderBy: { createdAt: "desc" },
             });

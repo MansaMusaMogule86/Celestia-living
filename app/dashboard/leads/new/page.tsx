@@ -193,6 +193,7 @@ export default function NewLeadPage() {
             }
 
             // Navigate back to the list and ensure the server data is refetched
+            router.refresh();
             await router.push("/dashboard/leads");
         } catch (error) {
             console.error("Failed to create lead", error);

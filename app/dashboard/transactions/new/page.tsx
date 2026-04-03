@@ -77,6 +77,7 @@ export default function NewTransactionPage() {
             }
 
             // Navigate back to the list and ensure the server data is refetched
+            router.refresh();
             await router.push("/dashboard/transactions");
         } catch (error) {
             console.error("Failed to create transaction", error);

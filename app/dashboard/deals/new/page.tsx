@@ -84,6 +84,7 @@ export default function NewDealPage() {
             }
 
             // Navigate back to the list and ensure the server data is refetched
+            router.refresh();
             await router.push("/dashboard/deals");
         } catch (error) {
             console.error("Failed to create deal", error);

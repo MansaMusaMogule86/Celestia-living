@@ -167,8 +167,9 @@ export const leadsService = {
         }
 
         try {
+            const resolvedTeamId = teamId ? await resolveTeamId(teamId) : null;
             const rows = await prisma.lead.findMany({
-                where: teamId ? { teamId } : undefined,
+                where: resolvedTeamId ? { teamId: resolvedTeamId } : undefined,
                 orderBy: { createdAt: "desc" },
                 include: {
                     assignedTo: {

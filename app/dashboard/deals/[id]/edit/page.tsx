@@ -121,6 +121,7 @@ export default function EditDealPage() {
             }
 
             toast.success("Deal updated successfully");
+            router.refresh();
             router.push(`/dashboard/deals/${id}`);
         } catch {
             setError("Failed to update deal");
