@@ -3,21 +3,13 @@
 import { motion } from "framer-motion";
 import { AiPulse } from "@/components/crm/ai-pulse";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
     Bot,
     Target,
-    Zap,
-    MessageSquare,
-    Sparkles,
-    Command,
-    Mic,
-    Send,
     Users,
     TrendingUp,
-    BrainCircuit
+    BrainCircuit,
+    Construction,
 } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -37,28 +29,14 @@ export default function CommandPage() {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center justify-between"
             >
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
-                        <BrainCircuit className="h-8 w-8 text-primary" />
-                        Autonomous Command Center
-                    </h1>
-                    <p className="text-muted-foreground mt-1">
-                        Overview of AI operations, autonomous agents, and strategic insights.
-                    </p>
-                </div>
-
-                <div className="flex gap-2">
-                    <Button variant="outline" className="gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10">
-                        <Bot className="h-4 w-4" />
-                        Train Agents
-                    </Button>
-                    <Button className="gap-2 bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 transition-opacity shadow-lg shadow-primary/25">
-                        <Zap className="h-4 w-4" />
-                        Configure Workflows
-                    </Button>
-                </div>
+                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                    <BrainCircuit className="h-8 w-8 text-primary" />
+                    Autonomous Command Center
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                    Overview of AI operations, autonomous agents, and strategic insights.
+                </p>
             </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -74,7 +52,6 @@ export default function CommandPage() {
                             title="Active Agents"
                             value="0"
                             icon={Bot}
-                            trend="0"
                             color="text-blue-500"
                             bg="bg-blue-500/10"
                         />
@@ -82,7 +59,6 @@ export default function CommandPage() {
                             title="Auto-Pilot Leads"
                             value="0"
                             icon={Users}
-                            trend="0%"
                             color="text-purple-500"
                             bg="bg-purple-500/10"
                         />
@@ -90,13 +66,12 @@ export default function CommandPage() {
                             title="Conversion Rate"
                             value="0.0%"
                             icon={Target}
-                            trend="0.0%"
                             color="text-emerald-500"
                             bg="bg-emerald-500/10"
                         />
                     </div>
 
-                    <Card className="border-primary/10 bg-gradient-to-br from-background via-background to-primary/5">
+                    <Card className="border-primary/10">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <TrendingUp className="h-5 w-5 text-primary" />
@@ -116,7 +91,7 @@ export default function CommandPage() {
                                         </linearGradient>
                                     </defs>
                                     <XAxis dataKey="time" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                                     <Tooltip
                                         contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
                                     />
@@ -126,48 +101,18 @@ export default function CommandPage() {
                         </CardContent>
                     </Card>
 
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 blur-3xl opacity-20 pointer-events-none" />
-                        <Card className="border-primary/20 bg-background/80 backdrop-blur-md">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Command className="h-5 w-5" />
-                                    Direct Command Interface
-                                </CardTitle>
-                                <CardDescription>
-                                    Issue direct instructions to the Autonomous Brain
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex gap-2">
-                                    <div className="relative flex-1">
-                                        <Sparkles className="absolute left-3 top-3 h-4 w-4 text-primary animate-pulse" />
-                                        <Input placeholder="Ask the AI to generate leads, optimize ads, or analyze calls..." className="pl-10 h-12 bg-background/50 border-primary/20 focus-visible:ring-primary/50" />
-                                    </div>
-                                    <Button size="icon" className="h-12 w-12 shrink-0 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
-                                        <Mic className="h-5 w-5" />
-                                    </Button>
-                                    <Button size="icon" className="h-12 w-12 shrink-0 bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:opacity-90">
-                                        <Send className="h-5 w-5" />
-                                    </Button>
-                                </div>
-                                <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
-                                    <Badge variant="outline" className="cursor-pointer hover:bg-primary/5 transition-colors whitespace-nowrap">
-                                        "Create a cold email campaign for Dentists in Dubai"
-                                    </Badge>
-                                    <Badge variant="outline" className="cursor-pointer hover:bg-primary/5 transition-colors whitespace-nowrap">
-                                        "Optimize Google Ads for 'Luxury Real Estate'"
-                                    </Badge>
-                                    <Badge variant="outline" className="cursor-pointer hover:bg-primary/5 transition-colors whitespace-nowrap">
-                                        "Draft follow-up for leads inactive &gt; 30 days"
-                                    </Badge>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                    <Card className="border-dashed border-2 border-muted">
+                        <CardContent className="py-12 text-center space-y-3">
+                            <Construction className="h-10 w-10 mx-auto text-muted-foreground/40" />
+                            <h3 className="font-semibold text-muted-foreground">AI Workflow Engine</h3>
+                            <p className="text-sm text-muted-foreground/70 max-w-sm mx-auto">
+                                Automated workflows, agent training, and direct command interface are coming soon.
+                            </p>
+                        </CardContent>
+                    </Card>
                 </motion.div>
 
-                {/* Side Panel - AI Feed */}
+                {/* Side Panel */}
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -176,14 +121,10 @@ export default function CommandPage() {
                 >
                     <AiPulse />
 
-                    <Card className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border-indigo-500/20">
-                        <CardHeader>
-                            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">System Status</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="text-center py-4 text-sm text-muted-foreground">
-                                No systems configured
-                            </div>
+                    <Card className="border-dashed border-2 border-muted">
+                        <CardContent className="py-8 text-center space-y-2">
+                            <p className="text-sm font-medium text-muted-foreground">System Status</p>
+                            <p className="text-xs text-muted-foreground/60">No systems configured yet</p>
                         </CardContent>
                     </Card>
                 </motion.div>
@@ -192,20 +133,14 @@ export default function CommandPage() {
     );
 }
 
-function MetricCard({ title, value, icon: Icon, trend, color, bg }: any) {
+function MetricCard({ title, value, icon: Icon, color, bg }: any) {
     return (
-        <Card className="overflow-hidden relative group hover:border-primary/50 transition-colors cursor-pointer">
-            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <Card>
             <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                     <div className={`p-2 rounded-lg ${bg}`}>
                         <Icon className={`h-5 w-5 ${color}`} />
                     </div>
-                    {trend && (
-                        <span className="text-xs font-medium text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-full">
-                            {trend}
-                        </span>
-                    )}
                 </div>
                 <div className="space-y-1">
                     <h3 className="text-2xl font-bold tracking-tight">{value}</h3>
@@ -213,17 +148,5 @@ function MetricCard({ title, value, icon: Icon, trend, color, bg }: any) {
                 </div>
             </CardContent>
         </Card>
-    )
-}
-
-function StatusRow({ label, status, color, animate }: any) {
-    return (
-        <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">{label}</span>
-            <div className="flex items-center gap-2">
-                <div className={`h-2 w-2 rounded-full ${color} ${animate ? 'animate-pulse' : ''}`} />
-                <span className="font-medium">{status}</span>
-            </div>
-        </div>
-    )
+    );
 }
