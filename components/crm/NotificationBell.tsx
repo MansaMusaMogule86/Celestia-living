@@ -70,19 +70,17 @@ export default function NotificationBell() {
     }, []);
 
     useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            void fetchNotifications();
-        }, 0);
+        // Fetch immediately on mount, then set 30s interval
+        void fetchNotifications();
 
         const interval = setInterval(() => {
             void fetchNotifications();
         }, 30_000);
 
         return () => {
-            clearTimeout(timeoutId);
             clearInterval(interval);
         };
-    }, [fetchNotifications]);
+    }, []);
 
     const unreadCount = notifications.filter((n) => !n.read).length;
 

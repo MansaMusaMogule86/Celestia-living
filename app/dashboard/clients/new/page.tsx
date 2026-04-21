@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -77,35 +77,57 @@ export default function NewClientPage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const toggleType = (type: ClientType) => {
+    const toggleType = useCallback((type: ClientType) => {
         setSelectedTypes(prev =>
             prev.includes(type)
                 ? prev.filter(t => t !== type)
                 : [...prev, type]
         );
-    };
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitError(null);
         setIsSubmitting(true);
 
+        const payload = {
+            name: formData.name.trim(),
+            email: formData.email.trim().toLowerCase(),
+            phone: formData.phone.trim(),
+            nationality: formData.nationality,
+            notes: formData.notes,
+            type: selectedTypes,
+            documents: [],
+            properties: [],
+            deals: [],
+        };
+
+        const postClient = async () => {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 15_000);
+
+            try {
+                return await fetch("/api/clients", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                    credentials: "same-origin",
+                    signal: controller.signal,
+                });
+            } finally {
+                clearTimeout(timeout);
+            }
+        };
+
         try {
-            const res = await fetch("/api/clients", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    name: formData.name.trim(),
-                    email: formData.email.trim().toLowerCase(),
-                    phone: formData.phone.trim(),
-                    nationality: formData.nationality,
-                    notes: formData.notes,
-                    type: selectedTypes,
-                    documents: [],
-                    properties: [],
-                    deals: [],
-                }),
-            });
+            let res: Response;
+            try {
+                res = await postClient();
+            } catch (networkError) {
+                // Retry once for transient network drops.
+                res = await postClient();
+                console.warn("[Client] initial create request failed, retried", networkError);
+            }
 
             const json = await res.json();
             console.log("[Client] create response", { status: res.status, body: json });
@@ -119,7 +141,13 @@ export default function NewClientPage() {
             await router.push("/dashboard/clients");
         } catch (error) {
             console.error("Failed to create client", error);
-            setSubmitError("Failed to create client");
+            if (error instanceof DOMException && error.name === "AbortError") {
+                setSubmitError("Request timed out. Please try again.");
+            } else if (error instanceof TypeError) {
+                setSubmitError("Network error while creating client. Please retry.");
+            } else {
+                setSubmitError("Failed to create client");
+            }
         } finally {
             setIsSubmitting(false);
         }

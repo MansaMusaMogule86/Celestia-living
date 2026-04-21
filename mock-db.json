@@ -31,7 +31,40 @@
       "updatedAt": "2026-04-03T03:26:21.140Z"
     }
   ],
-  "clients": [],
+  "clients": [
+    {
+      "name": "Local Test",
+      "email": "local.1776741803111@example.com",
+      "phone": "+971500000000",
+      "type": [
+        "buyer"
+      ],
+      "nationality": "",
+      "documents": [],
+      "properties": [],
+      "deals": [],
+      "notes": "",
+      "id": "client-001",
+      "createdAt": "2026-04-21T03:23:28.213Z",
+      "updatedAt": "2026-04-21T03:23:28.213Z"
+    },
+    {
+      "name": "Retry Test",
+      "email": "retry.1776741853152@example.com",
+      "phone": "+971509999999",
+      "type": [
+        "buyer"
+      ],
+      "nationality": "",
+      "documents": [],
+      "properties": [],
+      "deals": [],
+      "notes": "",
+      "id": "client-002",
+      "createdAt": "2026-04-21T03:24:13.571Z",
+      "updatedAt": "2026-04-21T03:24:13.572Z"
+    }
+  ],
   "transactions": [],
   "properties": [],
   "deals": [],
