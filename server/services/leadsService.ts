@@ -134,7 +134,25 @@ async function resolveTeamId(teamId?: string): Promise<string | null> {
     }
 }
 
-function toAppLead(prismaLead: any): Lead {
+type PrismaLeadRow = {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string | null;
+    phone: string | null;
+    status: string;
+    source: PrismaPortalName | null;
+    message: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    assignedTo?: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+    } | null;
+};
+
+function toAppLead(prismaLead: PrismaLeadRow): Lead {
     const parsedPayload = parseLeadPayload(prismaLead.message);
 
     return {
@@ -163,7 +181,7 @@ export const leadsService = {
     async getAll(teamId?: string): Promise<Lead[]> {
         if (!prismaEnabled) {
             await delay(100);
-            return mockStorage.getCollection("leads");
+            return mockStorage.getCollection<Lead>("leads");
         }
 
         try {
@@ -181,14 +199,14 @@ export const leadsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            return mockStorage.getCollection("leads");
+            return mockStorage.getCollection<Lead>("leads");
         }
     },
 
     async getById(id: string, teamId?: string): Promise<Lead | null> {
         if (!prismaEnabled) {
             await delay(50);
-            const leads = mockStorage.getCollection("leads");
+            const leads = mockStorage.getCollection<Lead>("leads");
             return leads.find((l: Lead) => l.id === id) || null;
         }
 
@@ -206,7 +224,7 @@ export const leadsService = {
         } catch {
             prismaEnabled = false;
             await delay(50);
-            const leads = mockStorage.getCollection("leads");
+            const leads = mockStorage.getCollection<Lead>("leads");
             return leads.find((l: Lead) => l.id === id) || null;
         }
     },
@@ -214,7 +232,7 @@ export const leadsService = {
     async getByStatus(status: LeadStatus): Promise<Lead[]> {
         if (!prismaEnabled) {
             await delay(100);
-            const leads = mockStorage.getCollection("leads");
+            const leads = mockStorage.getCollection<Lead>("leads");
             return leads.filter((l: Lead) => l.status === status);
         }
 
@@ -231,7 +249,7 @@ export const leadsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const leads = mockStorage.getCollection("leads");
+            const leads = mockStorage.getCollection<Lead>("leads");
             return leads.filter((l: Lead) => l.status === status);
         }
     },
@@ -239,7 +257,7 @@ export const leadsService = {
     async getBySource(source: LeadSource): Promise<Lead[]> {
         if (!prismaEnabled) {
             await delay(100);
-            const leads = mockStorage.getCollection("leads");
+            const leads = mockStorage.getCollection<Lead>("leads");
             return leads.filter((l: Lead) => l.source === source);
         }
 
@@ -257,7 +275,7 @@ export const leadsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const leads = mockStorage.getCollection("leads");
+            const leads = mockStorage.getCollection<Lead>("leads");
             return leads.filter((l: Lead) => l.source === source);
         }
     },
@@ -265,7 +283,7 @@ export const leadsService = {
     async getByPriority(priority: LeadPriority): Promise<Lead[]> {
         if (!prismaEnabled) {
             await delay(100);
-            const leads = mockStorage.getCollection("leads");
+            const leads = mockStorage.getCollection<Lead>("leads");
             return leads.filter((l: Lead) => l.priority === priority);
         }
 
@@ -282,7 +300,7 @@ export const leadsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const leads = mockStorage.getCollection("leads");
+            const leads = mockStorage.getCollection<Lead>("leads");
             return leads.filter((l: Lead) => l.priority === priority);
         }
     },
@@ -290,7 +308,7 @@ export const leadsService = {
     async getUnassigned(): Promise<Lead[]> {
         if (!prismaEnabled) {
             await delay(100);
-            const leads = mockStorage.getCollection("leads");
+            const leads = mockStorage.getCollection<Lead>("leads");
             return leads.filter((l: Lead) => !l.assignedTo);
         }
 
@@ -307,7 +325,7 @@ export const leadsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const leads = mockStorage.getCollection("leads");
+            const leads = mockStorage.getCollection<Lead>("leads");
             return leads.filter((l: Lead) => !l.assignedTo);
         }
     },
@@ -315,7 +333,7 @@ export const leadsService = {
     async getByAgent(agentId: string): Promise<Lead[]> {
         if (!prismaEnabled) {
             await delay(100);
-            const leads = mockStorage.getCollection("leads");
+            const leads = mockStorage.getCollection<Lead>("leads");
             return leads.filter((l: Lead) => l.assignedTo?.id === agentId);
         }
 
@@ -332,7 +350,7 @@ export const leadsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const leads = mockStorage.getCollection("leads");
+            const leads = mockStorage.getCollection<Lead>("leads");
             return leads.filter((l: Lead) => l.assignedTo?.id === agentId);
         }
     },
@@ -340,7 +358,7 @@ export const leadsService = {
     async create(lead: Omit<Lead, "id" | "createdAt" | "updatedAt">, options?: { teamId?: string; userId?: string }): Promise<Lead> {
         if (!prismaEnabled) {
             await delay(100);
-            const leads = mockStorage.getCollection("leads");
+            const leads = mockStorage.getCollection<Lead>("leads");
             const newLead: Lead = {
                 ...lead,
                 id: `lead-${String(leads.length + 1).padStart(3, "0")}`,
@@ -393,7 +411,7 @@ export const leadsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const leads = mockStorage.getCollection("leads");
+            const leads = mockStorage.getCollection<Lead>("leads");
             const newLead: Lead = {
                 ...lead,
                 id: `lead-${String(leads.length + 1).padStart(3, "0")}`,
@@ -524,7 +542,7 @@ export const leadsService = {
     async search(query: string): Promise<Lead[]> {
         await delay(100);
         const lowerQuery = query.toLowerCase();
-        const leads = mockStorage.getCollection("leads");
+        const leads = mockStorage.getCollection<Lead>("leads");
         return leads.filter((l: Lead) =>
             l.name.toLowerCase().includes(lowerQuery) ||
             l.email.toLowerCase().includes(lowerQuery) ||
@@ -553,3 +571,4 @@ export const leadsService = {
         };
     },
 };
+

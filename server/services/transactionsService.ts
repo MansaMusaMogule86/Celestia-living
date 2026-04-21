@@ -92,7 +92,22 @@ async function resolveTeamId(teamId?: string): Promise<string | null> {
     }
 }
 
-function toAppTransaction(prismaTransaction: any): Transaction {
+type PrismaTransactionRow = {
+    id: string;
+    type: string;
+    status: string;
+    amount: unknown;
+    currency: string | null;
+    description: string | null;
+    paymentMethod: string | null;
+    reference: string | null;
+    createdAt: Date;
+    completedAt: Date | null;
+    deal?: { id: string; title: string } | null;
+    client?: { id: string; firstName: string | null; lastName: string | null } | null;
+};
+
+function toAppTransaction(prismaTransaction: PrismaTransactionRow): Transaction {
     return {
         id: prismaTransaction.id,
         type: mapTypeFromPrisma(prismaTransaction.type),
@@ -123,7 +138,7 @@ export const transactionsService = {
     async getAll(teamId?: string): Promise<Transaction[]> {
         if (!prismaEnabled) {
             await delay(100);
-            return mockStorage.getCollection("transactions");
+            return mockStorage.getCollection<Transaction>("transactions");
         }
 
         try {
@@ -140,14 +155,14 @@ export const transactionsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            return mockStorage.getCollection("transactions");
+            return mockStorage.getCollection<Transaction>("transactions");
         }
     },
 
     async getById(id: string, teamId?: string): Promise<Transaction | null> {
         if (!prismaEnabled) {
             await delay(50);
-            const transactions = mockStorage.getCollection("transactions");
+            const transactions = mockStorage.getCollection<Transaction>("transactions");
             return transactions.find((t: Transaction) => t.id === id) || null;
         }
 
@@ -163,39 +178,39 @@ export const transactionsService = {
         } catch {
             prismaEnabled = false;
             await delay(50);
-            const transactions = mockStorage.getCollection("transactions");
+            const transactions = mockStorage.getCollection<Transaction>("transactions");
             return transactions.find((t: Transaction) => t.id === id) || null;
         }
     },
 
     async getByType(type: TransactionType): Promise<Transaction[]> {
         await delay(100);
-        const transactions = mockStorage.getCollection("transactions");
+        const transactions = mockStorage.getCollection<Transaction>("transactions");
         return transactions.filter((t: Transaction) => t.type === type);
     },
 
     async getByStatus(status: TransactionStatus): Promise<Transaction[]> {
         await delay(100);
-        const transactions = mockStorage.getCollection("transactions");
+        const transactions = mockStorage.getCollection<Transaction>("transactions");
         return transactions.filter((t: Transaction) => t.status === status);
     },
 
     async getByDeal(dealId: string): Promise<Transaction[]> {
         await delay(100);
-        const transactions = mockStorage.getCollection("transactions");
+        const transactions = mockStorage.getCollection<Transaction>("transactions");
         return transactions.filter((t: Transaction) => t.deal.id === dealId);
     },
 
     async getByClient(clientId: string): Promise<Transaction[]> {
         await delay(100);
-        const transactions = mockStorage.getCollection("transactions");
+        const transactions = mockStorage.getCollection<Transaction>("transactions");
         return transactions.filter((t: Transaction) => t.client.id === clientId);
     },
 
     async create(transaction: Omit<Transaction, "id" | "createdAt">, options?: { teamId?: string }): Promise<Transaction> {
         if (!prismaEnabled) {
             await delay(100);
-            const transactions = mockStorage.getCollection("transactions");
+            const transactions = mockStorage.getCollection<Transaction>("transactions");
             const newTransaction: Transaction = {
                 ...transaction,
                 id: `txn-${String(transactions.length + 1).padStart(3, "0")}`,
@@ -235,7 +250,7 @@ export const transactionsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const transactions = mockStorage.getCollection("transactions");
+            const transactions = mockStorage.getCollection<Transaction>("transactions");
             const newTransaction: Transaction = {
                 ...transaction,
                 id: `txn-${String(transactions.length + 1).padStart(3, "0")}`,
@@ -373,3 +388,4 @@ export const transactionsService = {
         };
     },
 };
+

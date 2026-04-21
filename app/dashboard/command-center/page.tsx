@@ -133,7 +133,15 @@ export default function CommandPage() {
     );
 }
 
-function MetricCard({ title, value, icon: Icon, color, bg }: any) {
+interface MetricCardProps {
+    title: string;
+    value: string;
+    icon: React.ElementType;
+    color: string;
+    bg: string;
+}
+
+function MetricCard({ title, value, icon: Icon, color, bg }: MetricCardProps) {
     return (
         <Card>
             <CardContent className="p-6">

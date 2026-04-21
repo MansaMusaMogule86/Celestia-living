@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 // import { useRouter } from "next/navigation"; // No longer needed with server action redirect
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -74,7 +74,6 @@ export default function NewPropertyPage() {
     // Form State
     const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
     const [title, setTitle] = useState("");
-    const [smartTitles, setSmartTitles] = useState<string[]>([]);
 
     // Cascading Location State
     const [selectedArea, setSelectedArea] = useState("");
@@ -97,8 +96,8 @@ export default function NewPropertyPage() {
     const currentLoc = locations.find(l => l.name === selectedArea);
     const availableCommunities = currentLoc?.communities || [];
 
-    // Title Generation Effect
-    useEffect(() => {
+    // Smart title suggestions are derived from current form values.
+    const smartTitles = useMemo(() => {
         const details = {
             type: propertyTypes.find(p => p.value === propType)?.label || "Property",
             bedrooms: parseInt(bedrooms) || 0,
@@ -109,8 +108,10 @@ export default function NewPropertyPage() {
         };
 
         if (selectedArea) {
-            setSmartTitles(generateSmartTitles(details));
+            return generateSmartTitles(details);
         }
+
+        return [];
     }, [propType, bedrooms, selectedArea, selectedCommunity, furnished]);
 
     const toggleAmenity = (amenity: string) => {

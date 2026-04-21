@@ -16,7 +16,11 @@ const defaultData = {
     notifications: [],
 };
 
-function readData() {
+type CollectionName = keyof typeof defaultData;
+type StorageRecord = object;
+type MockData = Record<CollectionName, StorageRecord[]>;
+
+function readData(): MockData {
     try {
         if (!fs.existsSync(STORAGE_FILE)) {
             fs.writeFileSync(STORAGE_FILE, JSON.stringify(defaultData, null, 2));
@@ -30,7 +34,7 @@ function readData() {
     }
 }
 
-function writeData(data: any) {
+function writeData(data: MockData) {
     try {
         fs.writeFileSync(STORAGE_FILE, JSON.stringify(data, null, 2));
     } catch (err) {
@@ -39,32 +43,32 @@ function writeData(data: any) {
 }
 
 export const mockStorage = {
-    getCollection(name: keyof typeof defaultData) {
+    getCollection<T extends StorageRecord = StorageRecord>(name: CollectionName): T[] {
         const data = readData();
-        return data[name] || [];
+        return (data[name] || []) as T[];
     },
     
-    addToCollection(name: keyof typeof defaultData, item: any) {
+    addToCollection(name: CollectionName, item: StorageRecord) {
         const data = readData();
         if (!data[name]) data[name] = [];
         data[name].push(item);
         writeData(data);
     },
     
-    updateInCollection(name: keyof typeof defaultData, id: string, updates: any) {
+    updateInCollection(name: CollectionName, id: string, updates: StorageRecord) {
         const data = readData();
         if (!data[name]) return;
-        const index = data[name].findIndex((i: any) => i.id === id);
+        const index = data[name].findIndex((item) => (item as { id?: unknown }).id === id);
         if (index !== -1) {
             data[name][index] = { ...data[name][index], ...updates };
             writeData(data);
         }
     },
     
-    removeFromCollection(name: keyof typeof defaultData, id: string) {
+    removeFromCollection(name: CollectionName, id: string) {
         const data = readData();
         if (!data[name]) return;
-        data[name] = data[name].filter((i: any) => i.id !== id);
+        data[name] = data[name].filter((item) => (item as { id?: unknown }).id !== id);
         writeData(data);
     }
 };

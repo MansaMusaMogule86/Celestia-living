@@ -60,6 +60,36 @@ function mapDealStageToPrisma(stage: DealStage): "INQUIRY" | "VIEWING" | "OFFER"
     }
 }
 
+type PrismaDealActivityRow = {
+    id: string;
+    type: string;
+    description: string;
+    createdAt: Date;
+    createdBy: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+    };
+};
+
+type PrismaDealRow = {
+    id: string;
+    title: string;
+    type: string;
+    stage: string;
+    property: { id: string; title: string };
+    client: { id: string; firstName: string | null; lastName: string | null };
+    agent: { id: string; firstName: string | null; lastName: string | null };
+    value: unknown;
+    commission: unknown;
+    expectedCloseDate: Date | null;
+    actualCloseDate: Date | null;
+    notes: string | null;
+    activities?: PrismaDealActivityRow[];
+    createdAt: Date;
+    updatedAt: Date;
+};
+
 async function resolveTeamId(teamId?: string): Promise<string | null> {
     try {
         if (teamId) {
@@ -82,7 +112,7 @@ async function resolveTeamId(teamId?: string): Promise<string | null> {
     }
 }
 
-function toAppDeal(prismaDeal: any): Deal {
+function toAppDeal(prismaDeal: PrismaDealRow): Deal {
     return {
         id: prismaDeal.id,
         title: prismaDeal.title,
@@ -109,9 +139,9 @@ function toAppDeal(prismaDeal: any): Deal {
             ? prismaDeal.actualCloseDate.toISOString().split("T")[0]
             : undefined,
         notes: prismaDeal.notes || "",
-        activities: (prismaDeal.activities || []).map((activity: any) => ({
+        activities: (prismaDeal.activities || []).map((activity) => ({
             id: activity.id,
-            type: activity.type,
+            type: activity.type as DealActivity["type"],
             description: activity.description,
             createdAt: activity.createdAt.toISOString(),
             createdBy: {

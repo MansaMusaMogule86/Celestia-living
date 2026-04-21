@@ -126,7 +126,25 @@ function unpackDescription(raw?: string | null): {
     }
 }
 
-function toAppProperty(row: any): Property {
+type PrismaPropertyRow = {
+    id: string;
+    title: string;
+    type: string;
+    status: string;
+    purpose: string;
+    price: unknown;
+    area: string | null;
+    location: string | null;
+    bedrooms: number | null;
+    bathrooms: number | null;
+    sizeSqFt: number | null;
+    images: string[];
+    description: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+};
+
+function toAppProperty(row: PrismaPropertyRow): Property {
     const meta = unpackDescription(row.description);
 
     return {
@@ -163,7 +181,7 @@ export const propertiesService = {
     async getAll(teamId?: string): Promise<Property[]> {
         if (!prismaEnabled) {
             await delay(100);
-            return mockStorage.getCollection("properties");
+            return mockStorage.getCollection<Property>("properties");
         }
 
         try {
@@ -179,14 +197,14 @@ export const propertiesService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            return mockStorage.getCollection("properties");
+            return mockStorage.getCollection<Property>("properties");
         }
     },
 
     async getById(id: string, teamId?: string): Promise<Property | null> {
         if (!prismaEnabled) {
             await delay(50);
-            const properties = mockStorage.getCollection("properties");
+            const properties = mockStorage.getCollection<Property>("properties");
             return properties.find((p: Property) => p.id === id) || null;
         }
 
@@ -198,33 +216,33 @@ export const propertiesService = {
         } catch {
             prismaEnabled = false;
             await delay(50);
-            const properties = mockStorage.getCollection("properties");
+            const properties = mockStorage.getCollection<Property>("properties");
             return properties.find((p: Property) => p.id === id) || null;
         }
     },
 
     async getByStatus(status: PropertyStatus): Promise<Property[]> {
         await delay(100);
-        const properties = mockStorage.getCollection("properties");
+        const properties = mockStorage.getCollection<Property>("properties");
         return properties.filter((p: Property) => p.status === status);
     },
 
     async getByType(type: PropertyType): Promise<Property[]> {
         await delay(100);
-        const properties = mockStorage.getCollection("properties");
+        const properties = mockStorage.getCollection<Property>("properties");
         return properties.filter((p: Property) => p.type === type);
     },
 
     async getByListingType(listingType: ListingType): Promise<Property[]> {
         await delay(100);
-        const properties = mockStorage.getCollection("properties");
+        const properties = mockStorage.getCollection<Property>("properties");
         return properties.filter((p: Property) => p.listingType === listingType);
     },
 
     async create(data: Omit<Property, "id" | "createdAt" | "updatedAt">, _userId?: string, teamId?: string): Promise<Property> {
         if (!prismaEnabled) {
             await delay(100);
-            const properties = mockStorage.getCollection("properties");
+            const properties = mockStorage.getCollection<Property>("properties");
             const newProperty: Property = {
                 ...data,
                 id: `prop-${String(properties.length + 1).padStart(3, "0")}`,
@@ -263,7 +281,7 @@ export const propertiesService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const properties = mockStorage.getCollection("properties");
+            const properties = mockStorage.getCollection<Property>("properties");
             const newProperty: Property = {
                 ...data,
                 id: `prop-${String(properties.length + 1).padStart(3, "0")}`,
@@ -380,7 +398,7 @@ export const propertiesService = {
     async search(query: string): Promise<Property[]> {
         await delay(100);
         const lowerQuery = query.toLowerCase();
-        const properties = mockStorage.getCollection("properties");
+        const properties = mockStorage.getCollection<Property>("properties");
         return properties.filter((p: Property) =>
             p.title.toLowerCase().includes(lowerQuery) ||
             p.location.area.toLowerCase().includes(lowerQuery) ||
@@ -409,3 +427,4 @@ export const propertiesService = {
         };
     },
 };
+

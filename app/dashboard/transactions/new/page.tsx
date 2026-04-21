@@ -235,7 +235,7 @@ export default function NewTransactionPage() {
                                                 <SelectItem value="cheque">Cheque</SelectItem>
                                                 <SelectItem value="cash">Cash</SelectItem>
                                                 <SelectItem value="credit_card">Credit Card</SelectItem>
-                                                <SelectItem value="manager_cheque">Manager's Cheque</SelectItem>
+                                                <SelectItem value="manager_cheque">Manager&apos;s Cheque</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -311,7 +311,7 @@ export default function NewTransactionPage() {
                             <CardContent className="text-sm text-muted-foreground space-y-2">
                                 <p>• Always link transactions to a deal for proper tracking</p>
                                 <p>• Generate a unique reference for each transaction</p>
-                                <p>• Mark status as "Completed" once payment is verified</p>
+                                <p>• Mark status as &quot;Completed&quot; once payment is verified</p>
                                 <p>• Record commission separately from sale transactions</p>
                             </CardContent>
                         </Card>

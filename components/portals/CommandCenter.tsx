@@ -111,6 +111,54 @@ interface IntegrationConfig {
     lastSyncAt: string | null;
 }
 
+interface CampaignPost {
+    id: string;
+    portal: string;
+}
+
+interface CampaignItem {
+    id: string;
+    title: string;
+    status: string;
+    scheduledAt?: string | null;
+    property?: {
+        title?: string;
+        images?: string[];
+    };
+    posts?: CampaignPost[];
+}
+
+interface PropertyOption {
+    id: string;
+    title: string;
+    price: number;
+    images?: string[];
+}
+
+interface AutomationAction {
+    type: string;
+}
+
+interface AutomationRuleItem {
+    id: string;
+    name: string;
+    trigger: string;
+    enabled: boolean;
+    actions?: AutomationAction[];
+}
+
+interface AnalyticsOverview {
+    liveCampaigns?: number;
+    totalImpressions?: number;
+    totalLeads?: number;
+    avgEngagement?: number;
+    avgCostPerLead?: number;
+}
+
+interface AnalyticsData {
+    overview?: AnalyticsOverview;
+}
+
 const DEFAULT_INTEGRATIONS: Record<string, IntegrationConfig> = {
     INSTAGRAM: { enabled: false, status: "DISCONNECTED", autoPublish: true, importLeads: true, syncInterval: 2, accountName: "", lastSyncAt: null },
     FACEBOOK: { enabled: false, status: "DISCONNECTED", autoPublish: true, importLeads: true, syncInterval: 2, accountName: "", lastSyncAt: null },
@@ -173,7 +221,7 @@ function StatusBadge({ status }: { status: string }) {
 
 // ─── Main Views ───────────────────────────────────────────────────────
 
-function CampaignCard({ campaign }: { campaign: any }) {
+function CampaignCard({ campaign }: { campaign: CampaignItem }) {
     const primaryImage = campaign.property?.images?.[0] || "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80";
 
     return (
@@ -193,7 +241,7 @@ function CampaignCard({ campaign }: { campaign: any }) {
             <div className="p-3 space-y-3">
                 <div className="flex items-center justify-between">
                     <div className="flex -space-x-1.5">
-                        {campaign.posts?.map((p: any) => (
+                        {campaign.posts?.map((p) => (
                             <PortalDot key={p.id} portal={p.portal} />
                         ))}
                     </div>
@@ -213,7 +261,7 @@ function CampaignCard({ campaign }: { campaign: any }) {
     );
 }
 
-function BoardView({ campaigns }: { campaigns: any[] }) {
+function BoardView({ campaigns }: { campaigns: CampaignItem[] }) {
     const columns = [
         { id: "DRAFT", title: "Drafts", color: "text-slate-500", bg: "bg-slate-50" },
         { id: "SCHEDULED", title: "Scheduled", color: "text-amber-600", bg: "bg-amber-50" },
@@ -245,6 +293,7 @@ function BoardView({ campaigns }: { campaigns: any[] }) {
 function ContentComposer({ onComplete }: { onComplete: () => void }) {
     const { data: properties, isLoading: propsLoading } = useProperties("");
     const createMutation = useCreateCampaign();
+    const propertyOptions = (properties as PropertyOption[] | undefined) || [];
 
     const [formData, setFormData] = useState({
         title: "",
@@ -264,7 +313,7 @@ function ContentComposer({ onComplete }: { onComplete: () => void }) {
         }
 
         // Auto-fill media from property if empty
-        const prop = properties?.find((p: any) => p.id === formData.propertyId);
+        const prop = propertyOptions.find((p) => p.id === formData.propertyId);
         const media = formData.mediaUrls.length > 0 ? formData.mediaUrls : prop?.images || [];
 
         await createMutation.mutateAsync({
@@ -283,7 +332,7 @@ function ContentComposer({ onComplete }: { onComplete: () => void }) {
                     <Select onValueChange={(v) => setFormData({ ...formData, propertyId: v })}>
                         <SelectTrigger><SelectValue placeholder="Search properties..." /></SelectTrigger>
                         <SelectContent>
-                            {properties?.map((p: any) => (
+                            {propertyOptions.map((p) => (
                                 <SelectItem key={p.id} value={p.id}>{p.title} - ${p.price}</SelectItem>
                             ))}
                         </SelectContent>
@@ -491,10 +540,12 @@ export default function CommandCenter() {
     const updateIntegrationMutation = useUpdatePortalIntegration();
     const syncIntegrationMutation = useSyncPortalIntegration();
 
-    const campaigns = campaignRes?.campaigns || [];
+    const campaigns = ((campaignRes as { campaigns?: CampaignItem[] } | undefined)?.campaigns) || [];
+    const automationRules = (rules as AutomationRuleItem[] | undefined) || [];
+    const analyticsData = (analytics as AnalyticsData | undefined);
+    const integrationRecords = (integrationList as Array<IntegrationConfig & { portal: string }> | undefined) || [];
     const integrationByPortal = useMemo(() => {
-        const records = (integrationList || []) as Array<IntegrationConfig & { portal: string }>;
-        return records.reduce<Record<string, IntegrationConfig>>((acc, integration) => {
+        return integrationRecords.reduce<Record<string, IntegrationConfig>>((acc, integration) => {
             acc[integration.portal] = {
                 enabled: integration.enabled,
                 status: integration.status,
@@ -506,10 +557,10 @@ export default function CommandCenter() {
             };
             return acc;
         }, {});
-    }, [integrationList]);
+    }, [integrationRecords]);
 
-    const connectedIntegrations = (integrationList || []).filter((item: any) => item.status === "CONNECTED").length;
-    const enabledIntegrations = (integrationList || []).filter((item: any) => item.enabled).length;
+    const connectedIntegrations = integrationRecords.filter((item) => item.status === "CONNECTED").length;
+    const enabledIntegrations = integrationRecords.filter((item) => item.enabled).length;
 
     const getPortalConfig = (portal: string): IntegrationConfig => integrationByPortal[portal] || DEFAULT_INTEGRATIONS[portal];
 
@@ -563,10 +614,10 @@ export default function CommandCenter() {
                 <div className="flex items-center gap-3">
                     <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1.5 h-8">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        {analytics?.overview?.liveCampaigns ?? 0} Live
+                        {analyticsData?.overview?.liveCampaigns ?? 0} Live
                     </Badge>
                     <Badge variant="outline" className="bg-violet-50 text-violet-700 border-violet-200 h-8">
-                        {rules?.length ?? 0} Automations
+                        {automationRules.length} Automations
                     </Badge>
                 </div>
             </div>
@@ -647,7 +698,7 @@ export default function CommandCenter() {
                                 <Archive className="h-6 w-6 text-stone-400" />
                             </div>
                             <p className="text-sm font-medium text-stone-600">No campaigns found</p>
-                            <Button variant="link" onClick={() => setShowComposer(true)}>Launch your first campaign</Button>
+                                <Button variant="link" onClick={() => setShowComposer(true)}>Launch your first campaign</Button>
                         </div>
                     ) : (
                         viewMode === "board" ? <BoardView campaigns={campaigns} /> : <div className="p-12 text-center text-muted-foreground">List and Calendar views coming soon...</div>
@@ -656,7 +707,7 @@ export default function CommandCenter() {
 
                 <TabsContent value="automations">
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {rules?.map((rule: any) => (
+                        {automationRules.map((rule) => (
                             <Card key={rule.id} className="border-stone-200 shadow-sm hover:shadow-md transition-all">
                                 <CardContent className="pt-6 space-y-4">
                                     <div className="flex items-start justify-between">
@@ -670,7 +721,7 @@ export default function CommandCenter() {
                                         <p className="text-xs text-muted-foreground mt-1">{TRIGGER_LABELS[rule.trigger]}</p>
                                     </div>
                                     <div className="flex gap-1.5 flex-wrap">
-                                        {rule.actions?.map((a: any, i: number) => (
+                                        {rule.actions?.map((a, i: number) => (
                                             <Badge key={i} variant="secondary" className="text-[10px] uppercase font-bold">
                                                 {ACTION_LABELS[a.type] || a.type}
                                             </Badge>
@@ -691,27 +742,27 @@ export default function CommandCenter() {
                         <Card>
                             <CardContent className="pt-6">
                                 <p className="text-sm text-stone-500">Impressions</p>
-                                <h2 className="text-3xl font-bold mt-1 text-indigo-600">{analytics?.overview?.totalImpressions.toLocaleString() || 0}</h2>
+                                <h2 className="text-3xl font-bold mt-1 text-indigo-600">{analyticsData?.overview?.totalImpressions?.toLocaleString() || 0}</h2>
                                 <p className="text-xs text-emerald-600 font-medium mt-1">↑ 12% from last month</p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="pt-6">
                                 <p className="text-sm text-stone-500">Leads Generated</p>
-                                <h2 className="text-3xl font-bold mt-1 text-emerald-600">{analytics?.overview?.totalLeads || 0}</h2>
+                                <h2 className="text-3xl font-bold mt-1 text-emerald-600">{analyticsData?.overview?.totalLeads || 0}</h2>
                                 <p className="text-xs text-emerald-600 font-medium mt-1">↑ 8% conversion rate</p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="pt-6">
                                 <p className="text-sm text-stone-500">Avg Engagement</p>
-                                <h2 className="text-3xl font-bold mt-1">{analytics?.overview?.avgEngagement}%</h2>
+                                <h2 className="text-3xl font-bold mt-1">{analyticsData?.overview?.avgEngagement}%</h2>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="pt-6">
                                 <p className="text-sm text-stone-500">Cost per Lead</p>
-                                <h2 className="text-3xl font-bold mt-1">${analytics?.overview?.avgCostPerLead}</h2>
+                                <h2 className="text-3xl font-bold mt-1">${analyticsData?.overview?.avgCostPerLead}</h2>
                             </CardContent>
                         </Card>
                     </div>

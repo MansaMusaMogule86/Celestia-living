@@ -368,7 +368,7 @@ export default function NewLeadPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Budget</CardTitle>
-                        <CardDescription>Lead's budget range</CardDescription>
+                        <CardDescription>Lead&apos;s budget range</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">

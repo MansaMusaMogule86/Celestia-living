@@ -224,16 +224,15 @@ export default function NewClientPage() {
                             {clientTypes.map((type) => (
                                 <div
                                     key={type.value}
-                                    className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-colors ${selectedTypes.includes(type.value)
+                                    className={`flex items-center space-x-3 p-4 rounded-lg border transition-colors ${selectedTypes.includes(type.value)
                                             ? "border-primary bg-primary/5"
                                             : "border-border hover:border-primary/50"
                                         }`}
-                                    onClick={() => toggleType(type.value)}
                                 >
                                     <Checkbox
                                         id={`type-${type.value}`}
                                         checked={selectedTypes.includes(type.value)}
-                                        onCheckedChange={() => {}}
+                                        onCheckedChange={() => toggleType(type.value)}
                                     />
                                     <Label
                                         htmlFor={`type-${type.value}`}

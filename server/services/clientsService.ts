@@ -36,6 +36,20 @@ function mapClientTypeFromPrisma(type: string): ClientType {
     }
 }
 
+type PrismaClientRow = {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string | null;
+    phone: string | null;
+    type: string[];
+    nationality: string | null;
+    notes: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    deals?: Array<{ id: string }>;
+};
+
 async function resolveTeamId(teamId?: string): Promise<string | null> {
     try {
         if (teamId) {
@@ -58,7 +72,7 @@ async function resolveTeamId(teamId?: string): Promise<string | null> {
     }
 }
 
-function toAppClient(prismaClient: any): Client {
+function toAppClient(prismaClient: PrismaClientRow): Client {
     return {
         id: prismaClient.id,
         name: [prismaClient.firstName, prismaClient.lastName].filter(Boolean).join(" ").trim() || "Unnamed Client",
@@ -79,7 +93,7 @@ export const clientsService = {
     async getAll(teamId?: string): Promise<Client[]> {
         if (!prismaEnabled) {
             await delay(100);
-            return mockStorage.getCollection("clients");
+            return mockStorage.getCollection<Client>("clients");
         }
 
         try {
@@ -97,14 +111,14 @@ export const clientsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            return mockStorage.getCollection("clients");
+            return mockStorage.getCollection<Client>("clients");
         }
     },
 
     async getById(id: string, teamId?: string): Promise<Client | null> {
         if (!prismaEnabled) {
             await delay(50);
-            const clients = mockStorage.getCollection("clients");
+            const clients = mockStorage.getCollection<Client>("clients");
             return clients.find((c: Client) => c.id === id) || null;
         }
 
@@ -121,20 +135,20 @@ export const clientsService = {
         } catch {
             prismaEnabled = false;
             await delay(50);
-            const clients = mockStorage.getCollection("clients");
+            const clients = mockStorage.getCollection<Client>("clients");
             return clients.find((c: Client) => c.id === id) || null;
         }
     },
 
     async getByType(type: ClientType): Promise<Client[]> {
         await delay(100);
-        const clients = mockStorage.getCollection("clients");
+        const clients = mockStorage.getCollection<Client>("clients");
         return clients.filter((c: Client) => c.type.includes(type));
     },
 
     async getByNationality(nationality: string): Promise<Client[]> {
         await delay(100);
-        const clients = mockStorage.getCollection("clients");
+        const clients = mockStorage.getCollection<Client>("clients");
         return clients.filter((c: Client) =>
             c.nationality.toLowerCase() === nationality.toLowerCase()
         );
@@ -143,7 +157,7 @@ export const clientsService = {
     async create(client: Omit<Client, "id" | "createdAt" | "updatedAt">, options?: { teamId?: string }): Promise<Client> {
         if (!prismaEnabled) {
             await delay(100);
-            const clients = mockStorage.getCollection("clients");
+            const clients = mockStorage.getCollection<Client>("clients");
             const newClient: Client = {
                 ...client,
                 id: `client-${String(clients.length + 1).padStart(3, "0")}`,
@@ -185,7 +199,7 @@ export const clientsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const clients = mockStorage.getCollection("clients");
+            const clients = mockStorage.getCollection<Client>("clients");
             const newClient: Client = {
                 ...client,
                 id: `client-${String(clients.length + 1).padStart(3, "0")}`,
@@ -312,7 +326,7 @@ export const clientsService = {
     async search(query: string): Promise<Client[]> {
         await delay(100);
         const lowerQuery = query.toLowerCase();
-        const clients = mockStorage.getCollection("clients");
+        const clients = mockStorage.getCollection<Client>("clients");
         return clients.filter((c: Client) =>
             c.name.toLowerCase().includes(lowerQuery) ||
             c.email.toLowerCase().includes(lowerQuery) ||
@@ -337,3 +351,4 @@ export const clientsService = {
         };
     },
 };
+

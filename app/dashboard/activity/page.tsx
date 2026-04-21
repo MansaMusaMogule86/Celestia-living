@@ -102,8 +102,9 @@ export default function ActivityPage() {
                 }
 
                 setActivities(result.data || []);
-            } catch (loadError: any) {
-                setError(loadError.message || "Failed to load activity");
+            } catch (loadError: unknown) {
+                const message = loadError instanceof Error ? loadError.message : "Failed to load activity";
+                setError(message);
             } finally {
                 setLoading(false);
             }

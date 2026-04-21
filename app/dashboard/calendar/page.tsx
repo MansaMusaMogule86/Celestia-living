@@ -105,8 +105,9 @@ export default function CalendarPage() {
                 }
 
                 setAppointments(result.data || []);
-            } catch (loadError: any) {
-                setError(loadError.message || "Failed to load appointments");
+            } catch (loadError: unknown) {
+                const message = loadError instanceof Error ? loadError.message : "Failed to load appointments";
+                setError(message);
             } finally {
                 setLoadingAppointments(false);
             }
@@ -187,8 +188,9 @@ export default function CalendarPage() {
                 location: "",
                 notes: "",
             });
-        } catch (createError: any) {
-            setError(createError.message || "Failed to create appointment");
+        } catch (createError: unknown) {
+            const message = createError instanceof Error ? createError.message : "Failed to create appointment";
+            setError(message);
         } finally {
             setCreatingAppointment(false);
         }

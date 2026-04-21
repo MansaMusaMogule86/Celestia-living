@@ -1,6 +1,6 @@
 // Core data models for Ilan CRM
 
-export type Database = any;
+export type Database = unknown;
 
 export type PropertyType = "apartment" | "villa" | "townhouse" | "penthouse" | "studio" | "office" | "retail";
 export type PropertyStatus = "available" | "under_offer" | "sold" | "rented" | "off_market";

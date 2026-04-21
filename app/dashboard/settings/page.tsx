@@ -49,8 +49,9 @@ export default function SettingsPage() {
                 }
 
                 setSettings(result.data);
-            } catch (loadError: any) {
-                setError(loadError.message || "Failed to load settings");
+            } catch (loadError: unknown) {
+                const message = loadError instanceof Error ? loadError.message : "Failed to load settings";
+                setError(message);
             } finally {
                 setLoading(false);
             }
@@ -77,8 +78,9 @@ export default function SettingsPage() {
             setSettings(result.data);
             setSaved(true);
             setTimeout(() => setSaved(false), 2000);
-        } catch (saveError: any) {
-            setError(saveError.message || "Failed to save settings");
+        } catch (saveError: unknown) {
+            const message = saveError instanceof Error ? saveError.message : "Failed to save settings";
+            setError(message);
         } finally {
             setSaving(false);
         }

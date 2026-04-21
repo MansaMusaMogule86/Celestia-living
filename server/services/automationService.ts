@@ -1,6 +1,7 @@
 import { prisma } from "../db/prisma";
 import type { CreateAutomationRuleInput, UpdateAutomationRuleInput } from "@/lib/validators";
 import { PortalName } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 export async function createAutomationRule(
     input: CreateAutomationRuleInput,
@@ -12,7 +13,7 @@ export async function createAutomationRule(
             name: input.name,
             trigger: input.trigger,
             triggerConfig: input.triggerConfig,
-            actions: input.actions as any,
+            actions: input.actions as Prisma.InputJsonValue,
             portals: input.portals as PortalName[],
             enabled: input.enabled,
             createdById: userId,
@@ -39,7 +40,7 @@ export async function updateAutomationRule(
             ...(input.name && { name: input.name }),
             ...(input.trigger && { trigger: input.trigger }),
             ...(input.triggerConfig && { triggerConfig: input.triggerConfig }),
-            ...(input.actions && { actions: input.actions as any }),
+            ...(input.actions && { actions: input.actions as Prisma.InputJsonValue }),
             ...(input.portals && { portals: input.portals as PortalName[] }),
             ...(input.enabled !== undefined && { enabled: input.enabled }),
         },
