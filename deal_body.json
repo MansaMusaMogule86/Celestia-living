@@ -1,0 +1,1 @@
+﻿{"title":"Test Deal Marina","type":"sale","stage":"inquiry","property":{"id":"prop-test","title":"Marina Heights Apt"},"client":{"id":"client-001","name":"Local Test"},"value":1500000,"commission":2.5,"agent":{"id":"admin-001","name":"Admin User"},"expectedCloseDate":"2025-06-30","notes":"Test deal"}

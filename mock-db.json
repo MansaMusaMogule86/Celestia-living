@@ -1,0 +1,224 @@
+{
+  "leads": [
+    {
+      "name": "mehdi alaoui ismaili",
+      "email": "mehdi.alaouiismaili9@gmail.com",
+      "phone": "+971542310100",
+      "status": "contacted",
+      "source": "bayut",
+      "priority": "medium",
+      "budget": {
+        "min": 200000,
+        "max": 4000000
+      },
+      "requirements": {
+        "type": [
+          "apartment"
+        ],
+        "bedrooms": [],
+        "areas": [
+          "Dubai Marina"
+        ],
+        "listingType": "sale"
+      },
+      "notes": "",
+      "assignedTo": {
+        "id": "agent-ilan",
+        "name": "ilan"
+      },
+      "id": "lead-001",
+      "createdAt": "2026-04-03T03:26:21.140Z",
+      "updatedAt": "2026-04-03T03:26:21.140Z"
+    },
+    {
+      "name": "Sara Johnson",
+      "email": "sara@test.ae",
+      "phone": "+971509876543",
+      "status": "new",
+      "source": "website",
+      "priority": "high",
+      "budget": {
+        "min": 500000,
+        "max": 800000
+      },
+      "requirements": {
+        "type": [
+          "apartment"
+        ],
+        "bedrooms": [
+          2,
+          3
+        ],
+        "areas": [
+          "Dubai Marina"
+        ],
+        "listingType": "sale"
+      },
+      "notes": "",
+      "id": "lead-002",
+      "createdAt": "2026-04-23T01:19:03.808Z",
+      "updatedAt": "2026-04-23T01:19:03.808Z"
+    }
+  ],
+  "clients": [
+    {
+      "name": "Local Test",
+      "email": "local.1776741803111@example.com",
+      "phone": "+971500000000",
+      "type": [
+        "buyer"
+      ],
+      "nationality": "",
+      "documents": [],
+      "properties": [],
+      "deals": [],
+      "notes": "",
+      "id": "client-001",
+      "createdAt": "2026-04-21T03:23:28.213Z",
+      "updatedAt": "2026-04-21T03:23:28.213Z"
+    },
+    {
+      "name": "Retry Test",
+      "email": "retry.1776741853152@example.com",
+      "phone": "+971509999999",
+      "type": [
+        "buyer"
+      ],
+      "nationality": "",
+      "documents": [],
+      "properties": [],
+      "deals": [],
+      "notes": "",
+      "id": "client-002",
+      "createdAt": "2026-04-21T03:24:13.571Z",
+      "updatedAt": "2026-04-21T03:24:13.572Z"
+    },
+    {
+      "name": "Ahmed Al-Rashidi",
+      "email": "ahmed@test.ae",
+      "phone": "+971501234567",
+      "type": [
+        "buyer"
+      ],
+      "nationality": "UAE",
+      "documents": [],
+      "properties": [],
+      "deals": [],
+      "notes": "Test client",
+      "id": "client-003",
+      "createdAt": "2026-04-23T01:17:48.527Z",
+      "updatedAt": "2026-04-23T01:17:48.527Z"
+    }
+  ],
+  "transactions": [
+    {
+      "type": "sale",
+      "status": "pending",
+      "amount": 90000,
+      "currency": "AED",
+      "deal": {
+        "id": "deal-001",
+        "title": "Test Deal Marina"
+      },
+      "client": {
+        "id": "client-001",
+        "name": "Local Test"
+      },
+      "description": "Sale commission",
+      "paymentMethod": "bank_transfer",
+      "reference": "TXN-2025-001",
+      "id": "txn-001",
+      "createdAt": "2026-04-23T01:20:10.558Z"
+    }
+  ],
+  "properties": [
+    {
+      "title": "Marina Heights Apartment",
+      "type": "apartment",
+      "status": "available",
+      "listingType": "sale",
+      "price": 1800000,
+      "location": {
+        "area": "Dubai Marina",
+        "community": "Marina Promenade",
+        "building": "Tower A",
+        "developer": "Emaar",
+        "address": "Marina Walk, Dubai"
+      },
+      "details": {
+        "bedrooms": 2,
+        "bathrooms": 2,
+        "size": 1200,
+        "parkingSpaces": 1,
+        "furnished": false
+      },
+      "amenities": [
+        "pool",
+        "gym"
+      ],
+      "images": [],
+      "description": "Beautiful apartment",
+      "agent": {
+        "id": "admin-001",
+        "name": "Admin User"
+      },
+      "id": "prop-001",
+      "createdAt": "2026-04-23T01:20:10.318Z",
+      "updatedAt": "2026-04-23T01:20:10.318Z"
+    }
+  ],
+  "deals": [
+    {
+      "title": "Test Deal Marina",
+      "type": "sale",
+      "stage": "inquiry",
+      "property": {
+        "id": "prop-test",
+        "title": "Marina Heights Apt"
+      },
+      "client": {
+        "id": "client-001",
+        "name": "Local Test"
+      },
+      "value": 1500000,
+      "commission": 2.5,
+      "agent": {
+        "id": "admin-001",
+        "name": "Admin User"
+      },
+      "expectedCloseDate": "2025-06-30",
+      "notes": "Test deal",
+      "id": "deal-001",
+      "activities": [],
+      "createdAt": "2026-04-23T01:16:53.061Z",
+      "updatedAt": "2026-04-23T01:16:53.061Z"
+    },
+    {
+      "title": "Test Deal Marina",
+      "type": "sale",
+      "stage": "inquiry",
+      "property": {
+        "id": "prop-test",
+        "title": "Marina Heights Apt"
+      },
+      "client": {
+        "id": "client-001",
+        "name": "Local Test"
+      },
+      "value": 1500000,
+      "commission": 2.5,
+      "agent": {
+        "id": "admin-001",
+        "name": "Admin User"
+      },
+      "expectedCloseDate": "2025-06-30",
+      "notes": "Test deal",
+      "id": "deal-002",
+      "activities": [],
+      "createdAt": "2026-04-23T01:17:36.170Z",
+      "updatedAt": "2026-04-23T01:17:36.170Z"
+    }
+  ],
+  "teams": [],
+  "users": []
+}

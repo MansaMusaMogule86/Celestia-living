@@ -25,6 +25,7 @@ import {
     CheckCircle2,
 } from "lucide-react";
 import { Deal, DealStage, DealActivity } from "@/lib/types";
+import { toast } from "sonner";
 
 const stageConfig: Record<DealStage, { label: string; color: string; bgColor: string; step: number }> = {
     inquiry: { label: "Inquiry", color: "text-slate-600", bgColor: "bg-slate-100", step: 1 },
@@ -86,12 +87,100 @@ export default function DealDetailPage() {
     const router = useRouter();
     const [deal, setDeal] = useState<Deal | null>(null);
     const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(false);
     const [newNote, setNewNote] = useState("");
 
+    const dealStageOrder: DealStage[] = ["inquiry", "viewing", "offer", "negotiation", "agreement", "closed"];
+
+    const handleAdvanceStage = async () => {
+        if (!deal) {
+            return;
+        }
+
+        const currentIndex = dealStageOrder.indexOf(deal.stage);
+        if (currentIndex < 0 || currentIndex >= dealStageOrder.length - 1) {
+            toast.message("Deal is already at the final stage");
+            return;
+        }
+
+        const nextStage = dealStageOrder[currentIndex + 1];
+        setActionLoading(true);
+        try {
+            const res = await fetch(`/api/deals/${deal.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ stage: nextStage }),
+            });
+            const json = await res.json();
+
+            if (!res.ok || !json.success) {
+                toast.error(json.message || "Failed to advance deal stage");
+                return;
+            }
+
+            setDeal(json.data as Deal);
+            toast.success("Deal stage updated");
+        } catch {
+            toast.error("Failed to advance deal stage");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDeleteDeal = async () => {
+        if (!deal) {
+            return;
+        }
+
+        const confirmed = window.confirm("Delete this deal? This action cannot be undone.");
+        if (!confirmed) {
+            return;
+        }
+
+        setActionLoading(true);
+        try {
+            const res = await fetch(`/api/deals/${deal.id}`, { method: "DELETE" });
+            const json = await res.json();
+
+            if (!res.ok || !json.success) {
+                if (res.status === 403) {
+                    toast.error("Only managers or admins can delete deals");
+                    return;
+                }
+                toast.error(json.message || "Failed to delete deal");
+                return;
+            }
+
+            toast.success("Deal deleted");
+            router.refresh();
+            router.push("/dashboard/deals");
+        } catch {
+            toast.error("Failed to delete deal");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     useEffect(() => {
-        // Simulate fetching deal - in production, call API
-        setLoading(false);
-        setDeal(null);
+        const run = async () => {
+            setLoading(true);
+            try {
+                const dealId = Array.isArray(params.id) ? params.id[0] : params.id;
+                const res = await fetch(`/api/deals/${dealId}`, { cache: "no-store" });
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                    setDeal(null);
+                    return;
+                }
+                setDeal(json.data as Deal);
+            } catch {
+                setDeal(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void run();
     }, [params.id]);
 
     if (loading) {
@@ -153,8 +242,20 @@ export default function DealDetailPage() {
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline">Edit Deal</Button>
-                    <Button>Advance Stage</Button>
+                    <Link href={`/dashboard/deals/${deal.id}/edit`}>
+                        <Button variant="outline">Edit Deal</Button>
+                    </Link>
+                    <Button onClick={handleAdvanceStage} disabled={actionLoading}>
+                        Advance Stage
+                    </Button>
+                    <Button
+                        variant="outline"
+                        className="text-destructive hover:text-destructive"
+                        onClick={handleDeleteDeal}
+                        disabled={actionLoading}
+                    >
+                        Delete Deal
+                    </Button>
                 </div>
             </div>
 

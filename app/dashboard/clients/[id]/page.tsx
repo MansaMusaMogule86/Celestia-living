@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getSession } from "@/lib/auth/session";
 import { clientsService } from "@/server/services/clientsService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ClientDetailActions } from "@/components/crm/ClientDetailActions";
 import {
     ArrowLeft,
     Phone,
     Mail,
     Calendar,
-    Edit,
-    Trash2,
     Building2,
     Briefcase,
     FileText,
@@ -43,8 +43,11 @@ function formatDate(dateString: string): string {
 }
 
 export default async function ClientDetailPage({ params }: ClientDetailPageProps) {
+    const session = await getSession();
+    const teamId = session?.teamId;
+
     const { id } = await params;
-    const client = await clientsService.getById(id);
+    const client = await clientsService.getById(id, teamId);
 
     if (!client) {
         notFound();
@@ -76,14 +79,7 @@ export default async function ClientDetailPage({ params }: ClientDetailPageProps
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                    </Button>
-                    <Button variant="outline" className="text-destructive hover:text-destructive">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                    </Button>
+                    <ClientDetailActions id={client.id} name={client.name} />
                 </div>
             </div>
 

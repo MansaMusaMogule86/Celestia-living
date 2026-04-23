@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getSession } from "@/lib/auth/session";
 import { dealsService } from "@/server/services/dealsService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,8 +65,11 @@ function DealCard({ deal }: { deal: Deal }) {
 }
 
 export default async function DealsPage() {
-    const pipeline = await dealsService.getPipeline();
-    const stats = await dealsService.getStats();
+    const session = await getSession();
+    const teamId = session?.teamId;
+
+    const pipeline = await dealsService.getPipeline(teamId);
+    const stats = await dealsService.getStats(teamId);
     const stages = dealsService.getStageOrder().filter(s => s !== "cancelled");
 
     const hasDeals = stats.total > 0;

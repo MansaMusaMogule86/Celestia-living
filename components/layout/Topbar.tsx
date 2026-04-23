@@ -1,8 +1,11 @@
 "use client";
 
-import { Bell, Search, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
+import GlobalSearch from "@/components/crm/GlobalSearch";
+import NotificationBell from "@/components/crm/NotificationBell";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -13,18 +16,18 @@ import {
 
 export default function Topbar() {
     const { setTheme, theme } = useTheme();
+    const router = useRouter();
+
+    const handleLogout = async () => {
+        await fetch("/api/auth/logout", { method: "POST" });
+        router.push("/auth/login");
+        router.refresh();
+    };
 
     return (
         <header className="h-14 border-b bg-card px-6 flex items-center justify-between sticky top-0 z-10">
             <div className="flex items-center gap-4">
-                <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <input
-                        type="search"
-                        placeholder="Search properties, leads..."
-                        className="h-9 w-64 rounded-md border border-input bg-background pl-9 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:ring-1 focus:ring-ring"
-                    />
-                </div>
+                <GlobalSearch />
             </div>
 
             <div className="flex items-center gap-2">
@@ -52,10 +55,7 @@ export default function Topbar() {
                 </DropdownMenu>
 
                 {/* Notifications */}
-                <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive border-2 border-card" />
-                </Button>
+                <NotificationBell />
 
                 {/* User Avatar */}
                 <DropdownMenu>
@@ -70,7 +70,7 @@ export default function Topbar() {
                         <DropdownMenuItem>Profile</DropdownMenuItem>
                         <DropdownMenuItem>Settings</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
                             Sign out
                         </DropdownMenuItem>
                     </DropdownMenuContent>

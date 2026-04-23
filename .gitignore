@@ -8,7 +8,7 @@ node_modules
 tsconfig.tsbuildinfo
 tsc_output.txt
 ilan-crm
-
-/lib/generated/prisma
+mock-db.json
+opencode.json
 
 /lib/generated/prisma

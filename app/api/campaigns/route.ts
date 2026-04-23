@@ -11,14 +11,14 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const query = {
             search: searchParams.get("search") || undefined,
-            status: (searchParams.get("status") as any) || undefined,
-            portal: (searchParams.get("portal") as any) || undefined,
+            status: searchParams.get("status") || undefined,
+            portal: searchParams.get("portal") || undefined,
             dateFrom: searchParams.get("dateFrom") || undefined,
             dateTo: searchParams.get("dateTo") || undefined,
             cursor: searchParams.get("cursor") || undefined,
             limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined,
-            sortBy: (searchParams.get("sortBy") as any) || undefined,
-            sortOrder: (searchParams.get("sortOrder") as any) || undefined,
+            sortBy: searchParams.get("sortBy") || undefined,
+            sortOrder: searchParams.get("sortOrder") || undefined,
         };
 
         const validatedQuery = campaignSearchSchema.parse(query);

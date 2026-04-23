@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getSession } from "@/lib/auth/session";
 import { transactionsService } from "@/server/services/transactionsService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -65,8 +66,11 @@ function formatDate(dateString: string): string {
 }
 
 export default async function TransactionsPage() {
-    const transactions = await transactionsService.getAll();
-    const stats = await transactionsService.getStats();
+    const session = await getSession();
+    const teamId = session?.teamId;
+
+    const transactions = await transactionsService.getAll(teamId);
+    const stats = await transactionsService.getStats(teamId);
 
     return (
         <div className="space-y-6">
@@ -205,10 +209,12 @@ export default async function TransactionsPage() {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <Button variant="ghost" size="sm" className="gap-1">
-                                                    View
-                                                    <ArrowUpRight className="h-3.5 w-3.5" />
-                                                </Button>
+                                                <Link href={`/dashboard/transactions/${transaction.id}`}>
+                                                    <Button variant="ghost" size="sm" className="gap-1">
+                                                        View
+                                                        <ArrowUpRight className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </Link>
                                             </TableCell>
                                         </TableRow>
                                     );

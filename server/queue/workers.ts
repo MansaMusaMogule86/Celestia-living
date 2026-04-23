@@ -1,5 +1,5 @@
 import { Worker, Job } from "bullmq";
-import { createRedisConnection, QUEUE_NAMES } from "./config";
+import { QUEUE_NAMES } from "./config";
 import type {
     PublishJobData,
     SyncJobData,
@@ -411,7 +411,9 @@ async function processMetricsFetchJob(
 // ─── Worker Factory ──────────────────────────────────────────────────
 
 export function createWorkers() {
-    const connection = createRedisConnection();
+    const connection = {
+        url: process.env.REDIS_URL || "redis://localhost:6379",
+    };
 
     const publishWorker = new Worker(
         QUEUE_NAMES.CAMPAIGN_PUBLISH,
@@ -427,7 +429,7 @@ export function createWorkers() {
         QUEUE_NAMES.CAMPAIGN_SYNC,
         processSyncJob,
         {
-            connection: createRedisConnection(),
+            connection,
             concurrency: 3,
         }
     );
@@ -436,7 +438,7 @@ export function createWorkers() {
         QUEUE_NAMES.AUTOMATION_EXECUTE,
         processAutomationJob,
         {
-            connection: createRedisConnection(),
+            connection,
             concurrency: 5,
         }
     );
@@ -445,7 +447,7 @@ export function createWorkers() {
         QUEUE_NAMES.METRICS_FETCH,
         processMetricsFetchJob,
         {
-            connection: createRedisConnection(),
+            connection,
             concurrency: 3,
         }
     );

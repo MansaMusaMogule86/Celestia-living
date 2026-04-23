@@ -30,7 +30,7 @@ export async function PATCH(
     { params }: { params: Promise<{ portal: string }> }
 ) {
     return handleApiRoute(async () => {
-        await requireAuth();
+        const session = await requireAuth();
 
         const { portal } = await params;
         const parsedPortal = portalNameSchema.parse(portal.toUpperCase());
@@ -39,7 +39,7 @@ export async function PATCH(
         const body = await req.json();
         const validated = updatePortalIntegrationSchema.parse(body);
 
-        const updated = await portalsService.updateIntegration(legacyPortal, validated);
+        const updated = await portalsService.updateIntegration(legacyPortal, validated, session.teamId);
         if (!updated) {
             throw new Error("Not Found");
         }

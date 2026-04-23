@@ -25,6 +25,7 @@ import {
     ArrowUpRight,
 } from "lucide-react";
 import { Lead, LeadStatus, LeadPriority, LeadSource } from "@/lib/types";
+import { toast } from "sonner";
 
 const statusConfig: Record<LeadStatus, { label: string; color: string; bgColor: string }> = {
     new: { label: "New", color: "text-blue-700", bgColor: "bg-blue-100" },
@@ -76,12 +77,91 @@ export default function LeadDetailPage() {
     const router = useRouter();
     const [lead, setLead] = useState<Lead | null>(null);
     const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(false);
     const [newNote, setNewNote] = useState("");
 
+    const handleConvertToClient = async () => {
+        if (!lead || lead.status === "converted") {
+            return;
+        }
+
+        setActionLoading(true);
+        try {
+            const res = await fetch(`/api/leads/${lead.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: "converted" }),
+            });
+            const json = await res.json();
+
+            if (!res.ok || !json.success) {
+                toast.error(json.message || "Failed to convert lead");
+                return;
+            }
+
+            setLead(json.data as Lead);
+            toast.success("Lead marked as converted");
+        } catch {
+            toast.error("Failed to convert lead");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDeleteLead = async () => {
+        if (!lead) {
+            return;
+        }
+
+        const confirmed = window.confirm("Delete this lead? This action cannot be undone.");
+        if (!confirmed) {
+            return;
+        }
+
+        setActionLoading(true);
+        try {
+            const res = await fetch(`/api/leads/${lead.id}`, { method: "DELETE" });
+            const json = await res.json();
+
+            if (!res.ok || !json.success) {
+                if (res.status === 403) {
+                    toast.error("Only managers or admins can delete leads");
+                    return;
+                }
+                toast.error(json.message || "Failed to delete lead");
+                return;
+            }
+
+            toast.success("Lead deleted");
+            router.refresh();
+            router.push("/dashboard/leads");
+        } catch {
+            toast.error("Failed to delete lead");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     useEffect(() => {
-        // Simulate fetching lead - in production, call API
-        setLoading(false);
-        setLead(null);
+        const run = async () => {
+            setLoading(true);
+            try {
+                const leadId = Array.isArray(params.id) ? params.id[0] : params.id;
+                const res = await fetch(`/api/leads/${leadId}`, { cache: "no-store" });
+                const json = await res.json();
+                if (!res.ok || !json.success) {
+                    setLead(null);
+                    return;
+                }
+                setLead(json.data as Lead);
+            } catch {
+                setLead(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void run();
     }, [params.id]);
 
     if (loading) {
@@ -153,8 +233,22 @@ export default function LeadDetailPage() {
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline">Edit Lead</Button>
-                    <Button>Convert to Client</Button>
+                    <Link href={`/dashboard/leads/${lead.id}/edit`}>
+                        <Button variant="outline" disabled={actionLoading}>
+                            Edit Lead
+                        </Button>
+                    </Link>
+                    <Button onClick={handleConvertToClient} disabled={actionLoading || lead.status === "converted"}>
+                        Convert to Client
+                    </Button>
+                    <Button
+                        variant="outline"
+                        className="text-destructive hover:text-destructive"
+                        onClick={handleDeleteLead}
+                        disabled={actionLoading}
+                    >
+                        Delete Lead
+                    </Button>
                 </div>
             </div>
 
@@ -225,7 +319,9 @@ export default function LeadDetailPage() {
                                     <div>
                                         <p className="text-sm text-muted-foreground">Bedrooms</p>
                                         <p className="font-medium">
-                                            {lead.requirements.bedrooms.join(", ")} BR
+                                            {lead.requirements.bedrooms.length > 0
+                                                ? lead.requirements.bedrooms.map((bed) => (bed === 0 ? "Studio" : `${bed} BR`)).join(", ")
+                                                : "Not specified"}
                                         </p>
                                     </div>
                                 </div>
@@ -234,8 +330,15 @@ export default function LeadDetailPage() {
                                     <div>
                                         <p className="text-sm text-muted-foreground">Preferred Areas</p>
                                         <p className="font-medium">
-                                            {lead.requirements.areas.join(", ")}
+                                            {lead.requirements.areas.length > 0 ? lead.requirements.areas.join(", ") : "Not specified"}
                                         </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Tag className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Looking to</p>
+                                        <p className="font-medium capitalize">{lead.requirements.listingType}</p>
                                     </div>
                                 </div>
                             </div>

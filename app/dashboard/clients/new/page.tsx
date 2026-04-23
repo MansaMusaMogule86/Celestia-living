@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,7 @@ const documentTypes = [
 export default function NewClientPage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
     const [selectedTypes, setSelectedTypes] = useState<ClientType[]>([]);
 
     const [formData, setFormData] = useState({
@@ -76,27 +77,80 @@ export default function NewClientPage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const toggleType = (type: ClientType) => {
+    const toggleType = useCallback((type: ClientType) => {
         setSelectedTypes(prev =>
             prev.includes(type)
                 ? prev.filter(t => t !== type)
                 : [...prev, type]
         );
-    };
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSubmitError(null);
         setIsSubmitting(true);
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        console.log("Creating client:", {
-            ...formData,
+        const payload = {
+            name: formData.name.trim(),
+            email: formData.email.trim().toLowerCase(),
+            phone: formData.phone.trim(),
+            nationality: formData.nationality,
+            notes: formData.notes,
             type: selectedTypes,
-        });
+            documents: [],
+            properties: [],
+            deals: [],
+        };
 
-        router.push("/dashboard/clients");
+        const postClient = async () => {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 15_000);
+
+            try {
+                return await fetch("/api/clients", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                    credentials: "same-origin",
+                    signal: controller.signal,
+                });
+            } finally {
+                clearTimeout(timeout);
+            }
+        };
+
+        try {
+            let res: Response;
+            try {
+                res = await postClient();
+            } catch (networkError) {
+                // Retry once for transient network drops.
+                res = await postClient();
+                console.warn("[Client] initial create request failed, retried", networkError);
+            }
+
+            const json = await res.json();
+            console.log("[Client] create response", { status: res.status, body: json });
+            if (!res.ok || !json.success) {
+                setSubmitError(json?.error || "Failed to create client");
+                return;
+            }
+
+            // Navigate back to the list and ensure the server data is refetched
+            router.refresh();
+            await router.push("/dashboard/clients");
+        } catch (error) {
+            console.error("Failed to create client", error);
+            if (error instanceof DOMException && error.name === "AbortError") {
+                setSubmitError("Request timed out. Please try again.");
+            } else if (error instanceof TypeError) {
+                setSubmitError("Network error while creating client. Please retry.");
+            } else {
+                setSubmitError("Failed to create client");
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -169,7 +223,7 @@ export default function NewClientPage() {
                         <div className="space-y-2">
                             <Label htmlFor="nationality">Nationality</Label>
                             <Select
-                                value={formData.nationality}
+                                value={formData.nationality || undefined}
                                 onValueChange={(value) => handleSelectChange("nationality", value)}
                             >
                                 <SelectTrigger id="nationality">
@@ -198,11 +252,10 @@ export default function NewClientPage() {
                             {clientTypes.map((type) => (
                                 <div
                                     key={type.value}
-                                    className={`flex items-center space-x-3 p-4 rounded-lg border cursor-pointer transition-colors ${selectedTypes.includes(type.value)
+                                    className={`flex items-center space-x-3 p-4 rounded-lg border transition-colors ${selectedTypes.includes(type.value)
                                             ? "border-primary bg-primary/5"
                                             : "border-border hover:border-primary/50"
                                         }`}
-                                    onClick={() => toggleType(type.value)}
                                 >
                                     <Checkbox
                                         id={`type-${type.value}`}
@@ -251,6 +304,7 @@ export default function NewClientPage() {
 
                 {/* Submit Button */}
                 <div className="lg:col-span-2 flex justify-end gap-4">
+                    {submitError && <p className="text-sm text-red-600 mr-auto self-center">{submitError}</p>}
                     <Link href="/dashboard/clients">
                         <Button type="button" variant="outline">
                             Cancel

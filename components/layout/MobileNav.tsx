@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -22,7 +23,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const navItems = [
+const navItems: Array<{ title: string; href: Route; icon: typeof LayoutDashboard }> = [
     { title: "Command Center", href: "/dashboard/command-center", icon: BrainCircuit },
     { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { title: "Properties", href: "/dashboard/properties", icon: Building2 },
@@ -49,7 +50,7 @@ export default function MobileNav() {
                     <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">
                         I
                     </div>
-                    <span>Ilan CRM</span>
+                    <span>Celestia Living</span>
                 </Link>
                 <Button variant="ghost" size="icon" onClick={() => setOpen(!open)}>
                     {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -80,7 +81,7 @@ export default function MobileNav() {
                         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">
                             I
                         </div>
-                        <span>Ilan CRM</span>
+                        <span>Celestia Living</span>
                     </Link>
                     <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
                         <X className="h-5 w-5" />

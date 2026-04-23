@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +49,6 @@ const entityConfig: Record<string, { icon: React.ElementType; color: string; bgC
     settings: { icon: Settings, color: "text-gray-600", bgColor: "bg-gray-100" },
 };
 
-// Mock data
 const mockActivities: ActivityEntry[] = [];
 
 function formatRelativeTime(dateStr: string): string {
@@ -83,9 +82,36 @@ function formatFullDate(dateStr: string): string {
 }
 
 export default function ActivityPage() {
-    const [activities] = useState<ActivityEntry[]>(mockActivities);
+    const [activities, setActivities] = useState<ActivityEntry[]>(mockActivities);
     const [searchQuery, setSearchQuery] = useState("");
     const [filterType, setFilterType] = useState<string>("all");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const loadActivities = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+
+                const response = await fetch("/api/activity", { cache: "no-store" });
+                const result = await response.json();
+
+                if (!response.ok || !result?.success) {
+                    throw new Error(result?.error || "Failed to load activity");
+                }
+
+                setActivities(result.data || []);
+            } catch (loadError: unknown) {
+                const message = loadError instanceof Error ? loadError.message : "Failed to load activity";
+                setError(message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadActivities();
+    }, []);
 
     const filteredActivities = activities.filter(a => {
         const matchesSearch =
@@ -157,7 +183,19 @@ export default function ActivityPage() {
             </div>
 
             {/* Activity List */}
-            {filteredActivities.length === 0 ? (
+            {loading ? (
+                <Card>
+                    <CardContent className="py-16">
+                        <div className="text-center text-muted-foreground">Loading activity...</div>
+                    </CardContent>
+                </Card>
+            ) : error ? (
+                <Card>
+                    <CardContent className="py-16">
+                        <div className="text-center text-destructive">{error}</div>
+                    </CardContent>
+                </Card>
+            ) : filteredActivities.length === 0 ? (
                 <Card>
                     <CardContent className="py-16">
                         <div className="text-center">

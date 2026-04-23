@@ -5,11 +5,13 @@ import { cn } from "@/lib/utils";
 import React from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-    title: "Ilan CRM",
+    title: "Celestia Living",
     description: "Next-gen Real Estate CRM",
 };
 
@@ -34,6 +36,8 @@ export default function RootLayout({
                         {children}
                     </QueryProvider>
                 </ThemeProvider>
+                <SpeedInsights />
+                <Toaster />
             </body>
         </html>
     );

@@ -75,6 +75,7 @@ const dubaiAreas = [
 export default function NewLeadPage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
     const [selectedPropertyTypes, setSelectedPropertyTypes] = useState<PropertyType[]>([]);
     const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
     const [selectedBedrooms, setSelectedBedrooms] = useState<number[]>([]);
@@ -128,22 +129,78 @@ export default function NewLeadPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSubmitError(null);
         setIsSubmitting(true);
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const budgetMin = formData.budgetMin ? Number(formData.budgetMin) : 0;
+        const budgetMax = formData.budgetMax ? Number(formData.budgetMax) : 0;
 
-        console.log("Creating lead:", {
-            ...formData,
-            requirements: {
-                type: selectedPropertyTypes,
-                areas: selectedAreas,
-                bedrooms: selectedBedrooms,
-                listingType: formData.listingType,
-            },
-        });
+        if (Number.isNaN(budgetMin) || Number.isNaN(budgetMax)) {
+            setSubmitError("Budget values must be valid numbers.");
+            setIsSubmitting(false);
+            return;
+        }
 
-        router.push("/dashboard/leads");
+        if (budgetMin > budgetMax) {
+            setSubmitError("Min budget cannot be higher than max budget.");
+            setIsSubmitting(false);
+            return;
+        }
+
+        try {
+            const payload = {
+                name: formData.name.trim(),
+                email: formData.email.trim().toLowerCase(),
+                phone: formData.phone.trim(),
+                status: formData.status,
+                source: formData.source,
+                priority: formData.priority,
+                budget: {
+                    min: budgetMin,
+                    max: budgetMax,
+                },
+                requirements: {
+                    type: selectedPropertyTypes,
+                    areas: selectedAreas,
+                    bedrooms: selectedBedrooms,
+                    listingType: formData.listingType,
+                },
+                notes: formData.notes,
+                ...(formData.assignedAgent.trim()
+                    ? {
+                        assignedTo: {
+                            id: `agent-${formData.assignedAgent.trim().toLowerCase().replace(/\s+/g, "-")}`,
+                            name: formData.assignedAgent.trim(),
+                        },
+                    }
+                    : {}),
+            };
+
+            const response = await fetch("/api/leads", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+            console.log("[Lead] create response", { status: response.status, body: result });
+
+            if (!response.ok || !result.success) {
+                setSubmitError(result?.error || "Failed to create lead. Please try again.");
+                return;
+            }
+
+            // Navigate back to the list and ensure the server data is refetched
+            router.refresh();
+            await router.push("/dashboard/leads");
+        } catch (error) {
+            console.error("Failed to create lead", error);
+            setSubmitError("Failed to create lead. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -311,7 +368,7 @@ export default function NewLeadPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Budget</CardTitle>
-                        <CardDescription>Lead's budget range</CardDescription>
+                        <CardDescription>Lead&apos;s budget range</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
@@ -432,6 +489,9 @@ export default function NewLeadPage() {
 
                 {/* Submit Button */}
                 <div className="lg:col-span-2 flex justify-end gap-4">
+                    {submitError && (
+                        <p className="text-sm text-red-600 mr-auto self-center">{submitError}</p>
+                    )}
                     <Link href="/dashboard/leads">
                         <Button type="button" variant="outline">
                             Cancel

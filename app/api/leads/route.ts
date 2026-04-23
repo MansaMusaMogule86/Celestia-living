@@ -1,17 +1,28 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { leadsService } from "@/server/services/leadsService";
+import { handleApiRoute, successResponse } from "@/lib/api/utils";
+import { requireAuth } from "@/lib/auth/session";
+import { createLeadSchema } from "@/lib/validators";
 
 export async function GET() {
-    const leads = await leadsService.getAll();
-    return NextResponse.json(leads);
+    return handleApiRoute(async () => {
+        const session = await requireAuth();
+        const leads = await leadsService.getAll(session.teamId);
+        return successResponse(leads);
+    });
 }
 
 export async function POST(request: NextRequest) {
-    try {
+    return handleApiRoute(async () => {
+        const session = await requireAuth();
         const body = await request.json();
-        const lead = await leadsService.create(body);
-        return NextResponse.json(lead, { status: 201 });
-    } catch {
-        return NextResponse.json({ error: "Failed to create lead" }, { status: 400 });
-    }
+        const payload = createLeadSchema.parse(body);
+        console.log("[API] POST /api/leads payload:", payload);
+        const lead = await leadsService.create(payload, {
+            teamId: session.teamId,
+            userId: session.userId,
+        });
+        console.log("[API] POST /api/leads created:", lead);
+        return successResponse(lead, 201);
+    });
 }

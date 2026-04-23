@@ -6,15 +6,17 @@ interface ApiResponse<T> {
     error?: string;
 }
 
+type JsonMap = Record<string, unknown>;
+
 // ─── Campaigns ────────────────────────────────────────────────────────
 
-export function useCampaigns(filters: any = {}) {
+export function useCampaigns(filters: Record<string, string> = {}) {
     return useQuery({
         queryKey: ["campaigns", filters],
         queryFn: async () => {
             const params = new URLSearchParams(filters);
             const res = await fetch(`/api/campaigns?${params.toString()}`);
-            const json: ApiResponse<any> = await res.json();
+            const json: ApiResponse<unknown> = await res.json();
             if (!json.success) throw new Error(json.error);
             return json.data;
         },
@@ -27,7 +29,7 @@ export function useCampaign(id: string | null) {
         queryFn: async () => {
             if (!id) return null;
             const res = await fetch(`/api/campaigns/${id}`);
-            const json: ApiResponse<any> = await res.json();
+            const json: ApiResponse<unknown> = await res.json();
             if (!json.success) throw new Error(json.error);
             return json.data;
         },
@@ -38,13 +40,13 @@ export function useCampaign(id: string | null) {
 export function useCreateCampaign() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (data: any) => {
+        mutationFn: async (data: JsonMap) => {
             const res = await fetch("/api/campaigns", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
-            const json: ApiResponse<any> = await res.json();
+            const json: ApiResponse<unknown> = await res.json();
             if (!json.success) throw new Error(json.error);
             return json.data;
         },
@@ -57,13 +59,13 @@ export function useCreateCampaign() {
 export function useUpdateCampaign() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, data }: { id: string; data: any }) => {
+        mutationFn: async ({ id, data }: { id: string; data: JsonMap }) => {
             const res = await fetch(`/api/campaigns/${id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
-            const json: ApiResponse<any> = await res.json();
+            const json: ApiResponse<{ id: string }> = await res.json();
             if (!json.success) throw new Error(json.error);
             return json.data;
         },
@@ -81,7 +83,7 @@ export function useAutomationRules() {
         queryKey: ["automation-rules"],
         queryFn: async () => {
             const res = await fetch("/api/automation-rules");
-            const json: ApiResponse<any> = await res.json();
+            const json: ApiResponse<unknown> = await res.json();
             if (!json.success) throw new Error(json.error);
             return json.data;
         },
@@ -91,13 +93,13 @@ export function useAutomationRules() {
 export function useCreateAutomationRule() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (data: any) => {
+        mutationFn: async (data: JsonMap) => {
             const res = await fetch("/api/automation-rules", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
-            const json: ApiResponse<any> = await res.json();
+            const json: ApiResponse<unknown> = await res.json();
             if (!json.success) throw new Error(json.error);
             return json.data;
         },
@@ -114,7 +116,7 @@ export function useAnalytics(period: string = "30d") {
         queryKey: ["analytics", period],
         queryFn: async () => {
             const res = await fetch(`/api/analytics?period=${period}`);
-            const json: ApiResponse<any> = await res.json();
+            const json: ApiResponse<unknown> = await res.json();
             if (!json.success) throw new Error(json.error);
             return json.data;
         },
@@ -128,7 +130,7 @@ export function useProperties(search: string = "") {
         queryKey: ["properties", search],
         queryFn: async () => {
             const res = await fetch(`/api/properties?search=${search}`);
-            const json: ApiResponse<any> = await res.json();
+            const json: ApiResponse<unknown> = await res.json();
             if (!json.success) throw new Error(json.error);
             return json.data;
         },
@@ -142,7 +144,7 @@ export function usePortalIntegrations() {
         queryKey: ["portal-integrations"],
         queryFn: async () => {
             const res = await fetch("/api/portals");
-            const json: ApiResponse<any> = await res.json();
+            const json: ApiResponse<unknown> = await res.json();
             if (!json.success) throw new Error(json.error);
             return json.data;
         },
@@ -152,13 +154,13 @@ export function usePortalIntegrations() {
 export function useUpdatePortalIntegration() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ portal, data }: { portal: string; data: any }) => {
+        mutationFn: async ({ portal, data }: { portal: string; data: JsonMap }) => {
             const res = await fetch(`/api/portals/${portal}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
-            const json: ApiResponse<any> = await res.json();
+            const json: ApiResponse<unknown> = await res.json();
             if (!json.success) throw new Error(json.error);
             return json.data;
         },
@@ -175,7 +177,7 @@ export function useSyncPortalIntegration() {
             const res = await fetch(`/api/portals/${portal}/sync`, {
                 method: "POST",
             });
-            const json: ApiResponse<any> = await res.json();
+            const json: ApiResponse<unknown> = await res.json();
             if (!json.success) throw new Error(json.error);
             return json.data;
         },

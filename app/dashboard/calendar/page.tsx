@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +61,6 @@ const MONTHS = [
     "July", "August", "September", "October", "November", "December",
 ];
 
-// Mock appointments for demo
 const mockAppointments: Appointment[] = [];
 
 function getDaysInMonth(year: number, month: number) {
@@ -79,6 +78,9 @@ export default function CalendarPage() {
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
     const [showNewDialog, setShowNewDialog] = useState(false);
+    const [loadingAppointments, setLoadingAppointments] = useState(true);
+    const [creatingAppointment, setCreatingAppointment] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [newAppointment, setNewAppointment] = useState({
         title: "",
         type: "viewing" as Appointment["type"],
@@ -89,6 +91,30 @@ export default function CalendarPage() {
         location: "",
         notes: "",
     });
+
+    useEffect(() => {
+        const loadAppointments = async () => {
+            try {
+                setLoadingAppointments(true);
+                setError(null);
+                const response = await fetch("/api/calendar/appointments", { cache: "no-store" });
+                const result = await response.json();
+
+                if (!response.ok || !result?.success) {
+                    throw new Error(result?.error || "Failed to load appointments");
+                }
+
+                setAppointments(result.data || []);
+            } catch (loadError: unknown) {
+                const message = loadError instanceof Error ? loadError.message : "Failed to load appointments";
+                setError(message);
+            } finally {
+                setLoadingAppointments(false);
+            }
+        };
+
+        loadAppointments();
+    }, []);
 
     const daysInMonth = getDaysInMonth(currentYear, currentMonth);
     const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
@@ -123,34 +149,51 @@ export default function CalendarPage() {
         return appointments.filter(a => a.date === dateStr);
     };
 
-    const handleCreateAppointment = () => {
+    const handleCreateAppointment = async () => {
         if (!selectedDate || !newAppointment.title) return;
 
-        const appointment: Appointment = {
-            id: `apt-${Date.now()}`,
-            title: newAppointment.title,
-            type: newAppointment.type,
-            date: selectedDate,
-            startTime: newAppointment.startTime,
-            endTime: newAppointment.endTime,
-            client: newAppointment.client || undefined,
-            property: newAppointment.property || undefined,
-            location: newAppointment.location || undefined,
-            notes: newAppointment.notes || undefined,
-        };
+        try {
+            setCreatingAppointment(true);
+            setError(null);
+            const response = await fetch("/api/calendar/appointments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: newAppointment.title,
+                    type: newAppointment.type,
+                    date: selectedDate,
+                    startTime: newAppointment.startTime,
+                    endTime: newAppointment.endTime,
+                    client: newAppointment.client || undefined,
+                    property: newAppointment.property || undefined,
+                    location: newAppointment.location || undefined,
+                    notes: newAppointment.notes || undefined,
+                }),
+            });
 
-        setAppointments([...appointments, appointment]);
-        setShowNewDialog(false);
-        setNewAppointment({
-            title: "",
-            type: "viewing",
-            startTime: "09:00",
-            endTime: "10:00",
-            client: "",
-            property: "",
-            location: "",
-            notes: "",
-        });
+            const result = await response.json();
+            if (!response.ok || !result?.success) {
+                throw new Error(result?.error || "Failed to create appointment");
+            }
+
+            setAppointments((previous) => [...previous, result.data]);
+            setShowNewDialog(false);
+            setNewAppointment({
+                title: "",
+                type: "viewing",
+                startTime: "09:00",
+                endTime: "10:00",
+                client: "",
+                property: "",
+                location: "",
+                notes: "",
+            });
+        } catch (createError: unknown) {
+            const message = createError instanceof Error ? createError.message : "Failed to create appointment";
+            setError(message);
+        } finally {
+            setCreatingAppointment(false);
+        }
     };
 
     const selectedDateAppointments = selectedDate
@@ -256,14 +299,25 @@ export default function CalendarPage() {
                             <Button
                                 className="w-full"
                                 onClick={handleCreateAppointment}
-                                disabled={!newAppointment.title || !selectedDate}
+                                disabled={!newAppointment.title || !selectedDate || creatingAppointment}
                             >
-                                {selectedDate ? "Create Appointment" : "Select a date first"}
+                                {selectedDate
+                                    ? creatingAppointment
+                                        ? "Creating..."
+                                        : "Create Appointment"
+                                    : "Select a date first"
+                                }
                             </Button>
                         </div>
                     </DialogContent>
                 </Dialog>
             </div>
+
+            {error && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                    {error}
+                </div>
+            )}
 
             <div className="grid gap-6 lg:grid-cols-3">
                 {/* Calendar Grid */}
@@ -370,64 +424,68 @@ export default function CalendarPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {!selectedDate ? (
-                                <p className="text-sm text-muted-foreground text-center py-8">
-                                    Click on a date to view appointments
-                                </p>
-                            ) : selectedDateAppointments.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <CalendarIcon className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-                                    <p className="text-sm text-muted-foreground mb-4">
-                                        No appointments on this day
-                                    </p>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="gap-2"
-                                        onClick={() => setShowNewDialog(true)}
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                        Add Appointment
-                                    </Button>
-                                </div>
+                            {loadingAppointments ? (
+                                <p className="text-sm text-muted-foreground text-center py-8">Loading appointments...</p>
                             ) : (
-                                <div className="space-y-3">
-                                    {selectedDateAppointments.map(apt => {
-                                        const cfg = typeConfig[apt.type];
-                                        const Icon = cfg.icon;
-                                        return (
-                                            <div
-                                                key={apt.id}
-                                                className="p-3 rounded-lg border hover:bg-accent/50 transition-colors"
-                                            >
-                                                <div className="flex items-start gap-3">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${cfg.bgColor}`}>
-                                                        <Icon className={`h-4 w-4 ${cfg.color}`} />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-medium text-sm">{apt.title}</p>
-                                                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                                                            <Clock className="h-3 w-3" />
-                                                            {apt.startTime} - {apt.endTime}
+                                !selectedDate ? (
+                                    <p className="text-sm text-muted-foreground text-center py-8">
+                                        Click on a date to view appointments
+                                    </p>
+                                ) : selectedDateAppointments.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <CalendarIcon className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                                        <p className="text-sm text-muted-foreground mb-4">
+                                            No appointments on this day
+                                        </p>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="gap-2"
+                                            onClick={() => setShowNewDialog(true)}
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                            Add Appointment
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {selectedDateAppointments.map(apt => {
+                                            const cfg = typeConfig[apt.type];
+                                            const Icon = cfg.icon;
+                                            return (
+                                                <div
+                                                    key={apt.id}
+                                                    className="p-3 rounded-lg border hover:bg-accent/50 transition-colors"
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${cfg.bgColor}`}>
+                                                            <Icon className={`h-4 w-4 ${cfg.color}`} />
                                                         </div>
-                                                        {apt.client && (
-                                                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                                                                <User className="h-3 w-3" />
-                                                                {apt.client}
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-medium text-sm">{apt.title}</p>
+                                                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                                                <Clock className="h-3 w-3" />
+                                                                {apt.startTime} - {apt.endTime}
                                                             </div>
-                                                        )}
-                                                        {apt.location && (
-                                                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                                                                <MapPin className="h-3 w-3" />
-                                                                {apt.location}
-                                                            </div>
-                                                        )}
+                                                            {apt.client && (
+                                                                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                                                                    <User className="h-3 w-3" />
+                                                                    {apt.client}
+                                                                </div>
+                                                            )}
+                                                            {apt.location && (
+                                                                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                                                                    <MapPin className="h-3 w-3" />
+                                                                    {apt.location}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )
                             )}
                         </CardContent>
                     </Card>
