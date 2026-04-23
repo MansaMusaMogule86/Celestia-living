@@ -32,10 +32,17 @@ const PERIOD_DAYS: Record<string, number> = {
     "90d": 90,
 };
 
+const emptyOverviewStats: OverviewStats = {
+    totalCampaigns: 0, liveCampaigns: 0, scheduledCampaigns: 0,
+    totalPosts: 0, totalImpressions: 0, totalClicks: 0,
+    totalLeads: 0, avgEngagementRate: 0, avgCostPerLead: 0, activeAutomations: 0,
+};
+
 export async function getOverviewStats(
     teamId: string,
     period: string = "30d"
 ): Promise<OverviewStats> {
+    try {
     const days = PERIOD_DAYS[period] || 30;
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
@@ -115,12 +122,16 @@ export async function getOverviewStats(
         avgCostPerLead: Number(metricsAgg._avg.costPerLead ?? 0),
         activeAutomations: automationCount,
     };
+    } catch {
+        return emptyOverviewStats;
+    }
 }
 
 export async function getPortalBreakdown(
     teamId: string,
     period: string = "30d"
 ): Promise<PortalBreakdown[]> {
+    try {
     const days = PERIOD_DAYS[period] || 30;
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
@@ -174,12 +185,16 @@ export async function getPortalBreakdown(
             costPerLead: Math.round(avgCPL * 100) / 100,
         };
     });
+    } catch {
+        return [];
+    }
 }
 
 export async function getCampaignAnalytics(
     campaignId: string,
     teamId: string
 ) {
+    try {
     const campaign = await prisma.campaign.findUnique({
         where: { id: campaignId, teamId },
         include: {
@@ -247,4 +262,7 @@ export async function getCampaignAnalytics(
         totals,
         posts: postAnalytics,
     };
+    } catch {
+        return null;
+    }
 }

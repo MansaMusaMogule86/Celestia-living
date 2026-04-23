@@ -14,6 +14,8 @@ const defaultData = {
     teams: [],
     users: [],
     notifications: [],
+    appointments: [],
+    settings: [],
 };
 
 type CollectionName = keyof typeof defaultData;

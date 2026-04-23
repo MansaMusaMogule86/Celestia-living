@@ -1,4 +1,5 @@
 import { CreateAppointmentInput } from "@/lib/validators";
+import { mockStorage } from "@/lib/db/mock-storage";
 
 export interface AppointmentRecord {
     id: string;
@@ -16,12 +17,11 @@ export interface AppointmentRecord {
 }
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-const appointmentsState: AppointmentRecord[] = [];
 
 export const calendarService = {
     async getAll(): Promise<AppointmentRecord[]> {
         await delay(60);
-        return [...appointmentsState].sort((a, b) =>
+        return mockStorage.getCollection<AppointmentRecord>("appointments").sort((a, b) =>
             a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime)
         );
     },
@@ -39,7 +39,7 @@ export const calendarService = {
             createdAt: now,
             updatedAt: now,
         };
-        appointmentsState.push(record);
+        mockStorage.addToCollection("appointments", record);
         return record;
     },
 };

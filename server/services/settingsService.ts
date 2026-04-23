@@ -1,4 +1,5 @@
 import { CrmSettingsInput, UpdateCrmSettingsInput } from "@/lib/validators";
+import { mockStorage } from "@/lib/db/mock-storage";
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -14,26 +15,46 @@ const defaultSettings: CrmSettingsInput = {
     darkMode: false,
 };
 
-let settingsState: CrmSettingsInput = { ...defaultSettings };
+const SETTINGS_KEY = "crm_settings";
+
+function getStoredSettings(): CrmSettingsInput {
+    const all = mockStorage.getCollection<CrmSettingsInput & { id: string }>("settings");
+    const stored = all.find((s) => s.id === SETTINGS_KEY);
+    return stored ?? { ...defaultSettings };
+}
 
 export const settingsService = {
     async get(): Promise<CrmSettingsInput> {
         await delay(60);
-        return { ...settingsState };
+        return getStoredSettings();
     },
 
     async update(updates: UpdateCrmSettingsInput): Promise<CrmSettingsInput> {
         await delay(80);
-        settingsState = {
-            ...settingsState,
+        const current = getStoredSettings();
+        const updated: CrmSettingsInput & { id: string } = {
+            ...current,
             ...updates,
+            id: SETTINGS_KEY,
         };
-        return { ...settingsState };
+        const all = mockStorage.getCollection<CrmSettingsInput & { id: string }>("settings");
+        if (all.find((s) => s.id === SETTINGS_KEY)) {
+            mockStorage.updateInCollection("settings", SETTINGS_KEY, updated);
+        } else {
+            mockStorage.addToCollection("settings", updated);
+        }
+        return updated;
     },
 
     async reset(): Promise<CrmSettingsInput> {
         await delay(50);
-        settingsState = { ...defaultSettings };
-        return { ...settingsState };
+        const reset: CrmSettingsInput & { id: string } = { ...defaultSettings, id: SETTINGS_KEY };
+        const all = mockStorage.getCollection<CrmSettingsInput & { id: string }>("settings");
+        if (all.find((s) => s.id === SETTINGS_KEY)) {
+            mockStorage.updateInCollection("settings", SETTINGS_KEY, reset);
+        } else {
+            mockStorage.addToCollection("settings", reset);
+        }
+        return { ...defaultSettings };
     },
 };

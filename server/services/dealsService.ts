@@ -1,8 +1,7 @@
 import { Deal, DealStage, DealType, DealActivity } from "@/lib/types";
 import { prisma } from "@/server/db/prisma";
+import { mockStorage } from "@/lib/db/mock-storage";
 
-// Empty data - starting fresh
-const mockDeals: Deal[] = [];
 let prismaEnabled = true;
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -158,7 +157,7 @@ export const dealsService = {
     async getAll(teamId?: string): Promise<Deal[]> {
         if (!prismaEnabled) {
             await delay(100);
-            return [...mockDeals];
+            return mockStorage.getCollection<Deal>("deals");
         }
 
         try {
@@ -183,14 +182,15 @@ export const dealsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            return [...mockDeals];
+            return mockStorage.getCollection<Deal>("deals");
         }
     },
 
     async getById(id: string, teamId?: string): Promise<Deal | null> {
         if (!prismaEnabled) {
             await delay(50);
-            return mockDeals.find(d => d.id === id) || null;
+            const cached = mockStorage.getCollection<Deal>("deals");
+            return cached.find(d => d.id === id) || null;
         }
 
         try {
@@ -213,28 +213,29 @@ export const dealsService = {
         } catch {
             prismaEnabled = false;
             await delay(50);
-            return mockDeals.find(d => d.id === id) || null;
+            const all = mockStorage.getCollection<Deal>("deals");
+            return all.find(d => d.id === id) || null;
         }
     },
 
     async getByStage(stage: DealStage): Promise<Deal[]> {
-        await delay(100);
-        return mockDeals.filter(d => d.stage === stage);
+        const all = mockStorage.getCollection<Deal>("deals");
+        return all.filter(d => d.stage === stage);
     },
 
     async getByType(type: DealType): Promise<Deal[]> {
-        await delay(100);
-        return mockDeals.filter(d => d.type === type);
+        const all = mockStorage.getCollection<Deal>("deals");
+        return all.filter(d => d.type === type);
     },
 
     async getByAgent(agentId: string): Promise<Deal[]> {
-        await delay(100);
-        return mockDeals.filter(d => d.agent.id === agentId);
+        const all = mockStorage.getCollection<Deal>("deals");
+        return all.filter(d => d.agent.id === agentId);
     },
 
     async getByClient(clientId: string): Promise<Deal[]> {
-        await delay(100);
-        return mockDeals.filter(d => d.client.id === clientId);
+        const all = mockStorage.getCollection<Deal>("deals");
+        return all.filter(d => d.client.id === clientId);
     },
 
     async getPipeline(teamId?: string): Promise<Record<DealStage, Deal[]>> {
@@ -262,14 +263,15 @@ export const dealsService = {
     ): Promise<Deal> {
         if (!prismaEnabled) {
             await delay(100);
+            const existing = mockStorage.getCollection<Deal>("deals");
             const newDeal: Deal = {
                 ...deal,
-                id: `deal-${String(mockDeals.length + 1).padStart(3, "0")}`,
+                id: `deal-${String(existing.length + 1).padStart(3, "0")}`,
                 activities: [],
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             };
-            mockDeals.push(newDeal);
+            mockStorage.addToCollection("deals", newDeal);
             return newDeal;
         }
 
@@ -310,14 +312,15 @@ export const dealsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
+            const existing = mockStorage.getCollection<Deal>("deals");
             const newDeal: Deal = {
                 ...deal,
-                id: `deal-${String(mockDeals.length + 1).padStart(3, "0")}`,
+                id: `deal-${String(existing.length + 1).padStart(3, "0")}`,
                 activities: [],
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             };
-            mockDeals.push(newDeal);
+            mockStorage.addToCollection("deals", newDeal);
             return newDeal;
         }
     },
@@ -325,15 +328,12 @@ export const dealsService = {
     async update(id: string, updates: Partial<Deal>, teamId?: string): Promise<Deal | null> {
         if (!prismaEnabled) {
             await delay(100);
-            const index = mockDeals.findIndex(d => d.id === id);
-            if (index === -1) return null;
-
-            mockDeals[index] = {
-                ...mockDeals[index],
-                ...updates,
-                updatedAt: new Date().toISOString(),
-            };
-            return mockDeals[index];
+            const all = mockStorage.getCollection<Deal>("deals");
+            const target = all.find(d => d.id === id);
+            if (!target) return null;
+            const merged = { ...target, ...updates, updatedAt: new Date().toISOString() };
+            mockStorage.updateInCollection("deals", id, merged);
+            return merged;
         }
 
         try {
@@ -389,15 +389,12 @@ export const dealsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const index = mockDeals.findIndex(d => d.id === id);
-            if (index === -1) return null;
-
-            mockDeals[index] = {
-                ...mockDeals[index],
-                ...updates,
-                updatedAt: new Date().toISOString(),
-            };
-            return mockDeals[index];
+            const all = mockStorage.getCollection<Deal>("deals");
+            const target = all.find(d => d.id === id);
+            if (!target) return null;
+            const merged = { ...target, ...updates, updatedAt: new Date().toISOString() };
+            mockStorage.updateInCollection("deals", id, merged);
+            return merged;
         }
     },
 
@@ -413,7 +410,8 @@ export const dealsService = {
         dealId: string,
         activity: Omit<DealActivity, "id" | "createdAt">
     ): Promise<Deal | null> {
-        const deal = mockDeals.find(d => d.id === dealId);
+        const all = mockStorage.getCollection<Deal>("deals");
+        const deal = all.find(d => d.id === dealId);
         if (!deal) return null;
 
         const newActivity: DealActivity = {
@@ -421,18 +419,21 @@ export const dealsService = {
             id: `act-${Date.now()}`,
             createdAt: new Date().toISOString(),
         };
-        deal.activities.push(newActivity);
-        deal.updatedAt = new Date().toISOString();
-        return deal;
+        const updated = {
+            ...deal,
+            activities: [...deal.activities, newActivity],
+            updatedAt: new Date().toISOString(),
+        };
+        mockStorage.updateInCollection("deals", dealId, updated);
+        return updated;
     },
 
     async delete(id: string, teamId?: string): Promise<boolean> {
         if (!prismaEnabled) {
             await delay(100);
-            const index = mockDeals.findIndex(d => d.id === id);
-            if (index === -1) return false;
-
-            mockDeals.splice(index, 1);
+            const all = mockStorage.getCollection<Deal>("deals");
+            if (!all.find(d => d.id === id)) return false;
+            mockStorage.removeFromCollection("deals", id);
             return true;
         }
 
@@ -447,10 +448,9 @@ export const dealsService = {
         } catch {
             prismaEnabled = false;
             await delay(100);
-            const index = mockDeals.findIndex(d => d.id === id);
-            if (index === -1) return false;
-
-            mockDeals.splice(index, 1);
+            const all = mockStorage.getCollection<Deal>("deals");
+            if (!all.find(d => d.id === id)) return false;
+            mockStorage.removeFromCollection("deals", id);
             return true;
         }
     },
